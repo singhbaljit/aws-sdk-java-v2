@@ -19,6 +19,7 @@ import static software.amazon.awssdk.utils.async.StoringSubscriber.EventType.ON_
 
 import java.nio.ByteBuffer;
 import java.util.Optional;
+import java.util.concurrent.Phaser;
 import java.util.concurrent.atomic.AtomicLong;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
@@ -54,6 +55,8 @@ public class ByteBufferStoringSubscriber implements Subscriber<ByteBuffer> {
      * The active subscription. Set when {@link #onSubscribe(Subscription)} is invoked.
      */
     private Subscription subscription;
+
+    private Phaser phaser = new Phaser(1);
 
     /**
      * Create a subscriber that stores at least {@code minimumBytesBuffered} in memory for retrieval.
@@ -110,6 +113,27 @@ public class ByteBufferStoringSubscriber implements Subscriber<ByteBuffer> {
         }
     }
 
+    public TransferResult blockingTransferTo(ByteBuffer out) {
+        try {
+            TransferResult result = null;
+
+            while (out.hasRemaining() && result != TransferResult.END_OF_STREAM) {
+                int currentPhase = phaser.getPhase();
+                if (bytesBuffered.get() == 0) {
+                    phaser.awaitAdvanceInterruptibly(currentPhase);
+                    continue;
+                }
+
+                result = transferTo(out);
+            }
+
+            return result;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
+    }
+
     private int transfer(ByteBuffer in, ByteBuffer out) {
         int amountToTransfer = Math.min(in.remaining(), out.remaining());
 
@@ -151,6 +175,9 @@ public class ByteBufferStoringSubscriber implements Subscriber<ByteBuffer> {
 
     private void addBufferedDataAmount(long amountToAdd) {
         long currentDataBuffered = bytesBuffered.addAndGet(amountToAdd);
+        if (currentDataBuffered > 0) {
+            phaser.arrive();
+        }
         maybeRequestMore(currentDataBuffered);
     }
 

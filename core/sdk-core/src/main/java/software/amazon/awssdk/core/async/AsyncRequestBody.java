@@ -16,16 +16,20 @@
 package software.amazon.awssdk.core.async;
 
 import java.io.File;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Optional;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import software.amazon.awssdk.annotations.SdkPublicApi;
 import software.amazon.awssdk.core.internal.async.ByteArrayAsyncRequestBody;
 import software.amazon.awssdk.core.internal.async.FileAsyncRequestBody;
+import software.amazon.awssdk.core.internal.async.InputStreamAsyncRequestBody;
 import software.amazon.awssdk.core.internal.util.Mimetype;
 import software.amazon.awssdk.utils.BinaryUtils;
 
@@ -158,6 +162,10 @@ public interface AsyncRequestBody extends SdkPublisher<ByteBuffer> {
      */
     static AsyncRequestBody fromByteBuffer(ByteBuffer byteBuffer) {
         return fromBytes(BinaryUtils.copyAllBytesFrom(byteBuffer));
+    }
+
+    static AsyncRequestBody fromInputStream(InputStream inputStream, ExecutorService executor) {
+        return new InputStreamAsyncRequestBody(inputStream, executor);
     }
 
     /**
