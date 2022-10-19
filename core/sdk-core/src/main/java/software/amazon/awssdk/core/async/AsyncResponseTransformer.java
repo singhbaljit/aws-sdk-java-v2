@@ -23,9 +23,11 @@ import java.util.function.Consumer;
 import software.amazon.awssdk.annotations.SdkPublicApi;
 import software.amazon.awssdk.core.FileTransformerConfiguration;
 import software.amazon.awssdk.core.ResponseBytes;
+import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.SdkResponse;
 import software.amazon.awssdk.core.internal.async.ByteArrayAsyncResponseTransformer;
 import software.amazon.awssdk.core.internal.async.FileAsyncResponseTransformer;
+import software.amazon.awssdk.core.internal.async.InputStreamResponseTransformer;
 import software.amazon.awssdk.core.internal.async.PublisherAsyncResponseTransformer;
 import software.amazon.awssdk.utils.Validate;
 
@@ -231,5 +233,10 @@ public interface AsyncResponseTransformer<ResponseT, ResultT> {
      */
     static <ResponseT extends SdkResponse> AsyncResponseTransformer<ResponseT, ResponsePublisher<ResponseT>> toPublisher() {
         return new PublisherAsyncResponseTransformer<>();
+    }
+
+    static <ResponseT extends SdkResponse>
+            AsyncResponseTransformer<ResponseT, ResponseInputStream<ResponseT>> toBlockingInputStream() {
+        return new InputStreamResponseTransformer<>();
     }
 }
