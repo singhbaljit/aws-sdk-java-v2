@@ -186,7 +186,7 @@ public final class SimplePublisher<T> implements Publisher<T> {
 
         try {
             validateRejectState();
-            setRejectExceptionOrThrow(() -> new IllegalStateException("error() has been invoked"));
+            setRejectExceptionOrThrow(() -> new IllegalStateException("error() has been invoked", error));
             eventQueue.add(entry);
             processEventQueue();
         } catch (RuntimeException t) {

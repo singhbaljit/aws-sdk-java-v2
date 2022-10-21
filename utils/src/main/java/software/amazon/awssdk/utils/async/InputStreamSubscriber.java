@@ -15,7 +15,6 @@
 
 package software.amazon.awssdk.utils.async;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicReference;
@@ -63,16 +62,21 @@ public class InputStreamSubscriber extends InputStream implements Subscriber<Byt
     }
 
     @Override
-    public int read() throws IOException {
+    public int read() {
         singleByte.clear();
         TransferResult transferResult = delegate.blockingTransferTo(singleByte);
 
-        if (!singleByte.hasRemaining()) {
+        if (singleByte.hasRemaining()) {
             assert transferResult == TransferResult.END_OF_STREAM;
             return -1;
         }
 
-        return singleByte.get();
+        return singleByte.get(0);
+    }
+
+    @Override
+    public int read(byte[] b) {
+        return read(b, 0, b.length);
     }
 
     @Override

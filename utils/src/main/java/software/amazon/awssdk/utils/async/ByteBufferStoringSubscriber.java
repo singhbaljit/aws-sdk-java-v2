@@ -79,7 +79,7 @@ public class ByteBufferStoringSubscriber implements Subscriber<ByteBuffer> {
      * {@code out}, and this will return {@link TransferResult#END_OF_STREAM}.
      *
      * <p>Note: This method MUST NOT be called concurrently. Other methods on this class may be called concurrently with this
-     * one.
+     * one. This MUST NOT be called before {@link #onSubscribe(Subscription)} has returned.
      */
     public TransferResult transferTo(ByteBuffer out) {
         int transferred = 0;
@@ -113,27 +113,6 @@ public class ByteBufferStoringSubscriber implements Subscriber<ByteBuffer> {
         }
     }
 
-    public TransferResult blockingTransferTo(ByteBuffer out) {
-        try {
-            TransferResult result = null;
-
-            while (out.hasRemaining() && result != TransferResult.END_OF_STREAM) {
-                int currentPhase = phaser.getPhase();
-                if (bytesBuffered.get() == 0) {
-                    phaser.awaitAdvanceInterruptibly(currentPhase);
-                    continue;
-                }
-
-                result = transferTo(out);
-            }
-
-            return result;
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
-        }
-    }
-
     private int transfer(ByteBuffer in, ByteBuffer out) {
         int amountToTransfer = Math.min(in.remaining(), out.remaining());
 
@@ -150,6 +129,33 @@ public class ByteBufferStoringSubscriber implements Subscriber<ByteBuffer> {
         return amountToTransfer;
     }
 
+    public TransferResult blockingTransferTo(ByteBuffer out) {
+        try {
+            while (true) {
+                int currentPhase = phaser.getPhase();
+
+                int positionBeforeTransfer = out.position();
+                TransferResult result = transferTo(out);
+
+                if (result == TransferResult.END_OF_STREAM) {
+                    return TransferResult.END_OF_STREAM;
+                }
+
+                if (!out.hasRemaining()) {
+                    return TransferResult.SUCCESS;
+                }
+
+                if (positionBeforeTransfer == out.position()) {
+                    // We didn't read any data, and we still have space for more data. Wait for the state to be updated.
+                    phaser.awaitAdvanceInterruptibly(currentPhase);
+                }
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
+    }
+
     @Override
     public void onSubscribe(Subscription s) {
         storingSubscriber.onSubscribe(new DemandIgnoringSubscription(s));
@@ -161,23 +167,23 @@ public class ByteBufferStoringSubscriber implements Subscriber<ByteBuffer> {
     public void onNext(ByteBuffer byteBuffer) {
         storingSubscriber.onNext(byteBuffer.duplicate());
         addBufferedDataAmount(byteBuffer.remaining());
+        phaser.arrive();
     }
 
     @Override
     public void onError(Throwable t) {
         storingSubscriber.onError(t);
+        phaser.arrive();
     }
 
     @Override
     public void onComplete() {
         storingSubscriber.onComplete();
+        phaser.arrive();
     }
 
     private void addBufferedDataAmount(long amountToAdd) {
         long currentDataBuffered = bytesBuffered.addAndGet(amountToAdd);
-        if (currentDataBuffered > 0) {
-            phaser.arrive();
-        }
         maybeRequestMore(currentDataBuffered);
     }
 
