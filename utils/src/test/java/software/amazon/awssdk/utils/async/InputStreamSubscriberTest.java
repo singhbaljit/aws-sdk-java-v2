@@ -107,9 +107,9 @@ public class InputStreamSubscriberTest {
     public void read_afterClose_fails() {
         publisher.subscribe(subscriber);
         subscriber.close();
-        assertThatThrownBy(() -> subscriber.read()).hasRootCauseInstanceOf(CancellationException.class);
-        assertThatThrownBy(() -> subscriber.read(new byte[0])).hasRootCauseInstanceOf(CancellationException.class);
-        assertThatThrownBy(() -> subscriber.read(new byte[0], 0, 0)).hasRootCauseInstanceOf(CancellationException.class);
+        assertThatThrownBy(() -> subscriber.read()).isInstanceOf(CancellationException.class);
+        assertThatThrownBy(() -> subscriber.read(new byte[0])).isInstanceOf(CancellationException.class);
+        assertThatThrownBy(() -> subscriber.read(new byte[0], 0, 0)).isInstanceOf(CancellationException.class);
     }
 
 

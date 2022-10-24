@@ -18,6 +18,7 @@ package software.amazon.awssdk.utils.async;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -101,6 +102,20 @@ public class ByteBufferStoringSubscriberTest {
         try {
             ByteBufferStoringSubscriber subscriber = new ByteBufferStoringSubscriber(1);
             Subscription subscription = mock(Subscription.class);
+
+            AtomicInteger bufferNumber = new AtomicInteger(0);
+            doAnswer(i -> {
+                int bufferN = bufferNumber.getAndIncrement();
+
+                for (int j = 0; j < i.<Integer>getArgument(0); j++) {
+                    if (bufferN <= outputBufferSize + 1) {
+                        subscriber.onNext(byteBufferWithContent(bufferN));
+                    }
+                }
+
+                return null;
+            }).when(subscription).request(anyInt());
+
             subscriber.onSubscribe(subscription);
 
             Future<ByteBuffer> blockingRead = executor.submit(() -> {
@@ -109,18 +124,6 @@ public class ByteBufferStoringSubscriberTest {
                 assertThat(transferResult).isEqualTo(TransferResult.SUCCESS);
                 return out;
             });
-
-            AtomicInteger bufferNumber = new AtomicInteger(0);
-
-            doAnswer(i -> {
-                int bufferN = bufferNumber.getAndIncrement();
-
-                if (bufferN <= outputBufferSize + 1) {
-                    subscriber.onNext(byteBufferWithContent(bufferN));
-                }
-
-                return null;
-            }).when(subscription).request(1);
 
             ByteBuffer output = blockingRead.get();
             output.flip();

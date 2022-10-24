@@ -17,6 +17,10 @@ package software.amazon.awssdk.utils.async;
 
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.util.Queue;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
@@ -31,6 +35,9 @@ public class InputStreamSubscriber extends InputStream implements Subscriber<Byt
 
     private final AtomicReference<State> state = new AtomicReference<>(State.INITIAL);
     private Subscription subscription;
+
+    private final AtomicBoolean drainingCallQueue = new AtomicBoolean();
+    private final Queue<Runnable> callQueue = new ConcurrentLinkedQueue<>();
 
     public InputStreamSubscriber() {
         this.delegate = new ByteBufferStoringSubscriber(BUFFER_SIZE);
@@ -48,17 +55,20 @@ public class InputStreamSubscriber extends InputStream implements Subscriber<Byt
 
     @Override
     public void onNext(ByteBuffer byteBuffer) {
-        delegate.onNext(byteBuffer);
+        callQueue.add(() -> delegate.onNext(byteBuffer));
+        runCallQueue();
     }
 
     @Override
     public void onError(Throwable t) {
-        delegate.onError(t);
+        callQueue.add(() -> delegate.onError(t));
+        runCallQueue();
     }
 
     @Override
     public void onComplete() {
-        delegate.onComplete();
+        callQueue.add(delegate::onComplete);
+        runCallQueue();
     }
 
     @Override
@@ -97,7 +107,27 @@ public class InputStreamSubscriber extends InputStream implements Subscriber<Byt
     public void close() {
         if (state.compareAndSet(State.SUBSCRIBED, State.COMPLETED)) {
             subscription.cancel();
-            // No need to signal delegate.onError, it doesn't use it for anything.
+            onError(new CancellationException());
+        }
+    }
+
+    private void runCallQueue() {
+        if (drainingCallQueue.compareAndSet(false, true)) {
+            try {
+                doRunCallQueue();
+            } finally {
+                drainingCallQueue.set(false);
+            }
+        }
+    }
+
+    private void doRunCallQueue() {
+        while (true) {
+            Runnable call = callQueue.poll();
+            if (call == null) {
+                return;
+            }
+            call.run();
         }
     }
 
