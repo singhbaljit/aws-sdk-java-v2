@@ -235,7 +235,8 @@ public interface AsyncResponseTransformer<ResponseT, ResultT> {
         return new PublisherAsyncResponseTransformer<>();
     }
 
-    static <ResponseT extends SdkResponse> AsyncResponseTransformer<ResponseT, ResponseInputStream<ResponseT>> toBlockingInputStream() {
+    static <ResponseT extends SdkResponse>
+            AsyncResponseTransformer<ResponseT, ResponseInputStream<ResponseT>> toBlockingInputStream() {
         return new InputStreamResponseTransformer<>();
     }
 }

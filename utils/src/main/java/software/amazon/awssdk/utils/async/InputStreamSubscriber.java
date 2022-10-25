@@ -33,11 +33,13 @@ public class InputStreamSubscriber extends InputStream implements Subscriber<Byt
     private final ByteBufferStoringSubscriber delegate;
     private final ByteBuffer singleByte = ByteBuffer.allocate(1);
 
-    private final AtomicReference<State> state = new AtomicReference<>(State.INITIAL);
+    private final AtomicReference<State> inputStreamState = new AtomicReference<>(State.UNINITIALIZED);
+    private final AtomicBoolean drainingCallQueue = new AtomicBoolean(false);
+    private final Queue<QueueEntry> callQueue = new ConcurrentLinkedQueue<>();
+
     private Subscription subscription;
 
-    private final AtomicBoolean drainingCallQueue = new AtomicBoolean();
-    private final Queue<Runnable> callQueue = new ConcurrentLinkedQueue<>();
+    private boolean done = false;
 
     public InputStreamSubscriber() {
         this.delegate = new ByteBufferStoringSubscriber(BUFFER_SIZE);
@@ -45,30 +47,31 @@ public class InputStreamSubscriber extends InputStream implements Subscriber<Byt
 
     @Override
     public void onSubscribe(Subscription s) {
-        if (state.compareAndSet(State.INITIAL, State.SUBSCRIBED)) {
-            this.subscription = s;
-            delegate.onSubscribe(s);
-        } else {
+        if (!inputStreamState.compareAndSet(State.UNINITIALIZED, State.READABLE)) {
             close();
+            return;
         }
+
+        this.subscription = new CancelWatcher(s);
+        delegate.onSubscribe(subscription);
     }
 
     @Override
     public void onNext(ByteBuffer byteBuffer) {
-        callQueue.add(() -> delegate.onNext(byteBuffer));
-        runCallQueue();
+        callQueue.add(new QueueEntry(false, () -> delegate.onNext(byteBuffer)));
+        drainQueue();
     }
 
     @Override
     public void onError(Throwable t) {
-        callQueue.add(() -> delegate.onError(t));
-        runCallQueue();
+        callQueue.add(new QueueEntry(true, () -> delegate.onError(t)));
+        drainQueue();
     }
 
     @Override
     public void onComplete() {
-        callQueue.add(delegate::onComplete);
-        runCallQueue();
+        callQueue.add(new QueueEntry(true, delegate::onComplete));
+        drainQueue();
     }
 
     @Override
@@ -105,35 +108,83 @@ public class InputStreamSubscriber extends InputStream implements Subscriber<Byt
 
     @Override
     public void close() {
-        if (state.compareAndSet(State.SUBSCRIBED, State.COMPLETED)) {
+        if (inputStreamState.compareAndSet(State.UNINITIALIZED, State.CLOSED)) {
+            delegate.onSubscribe(new NoOpSubscription());
+            delegate.onError(new CancellationException());
+        }
+        else if (inputStreamState.compareAndSet(State.READABLE, State.CLOSED)) {
             subscription.cancel();
             onError(new CancellationException());
         }
     }
 
-    private void runCallQueue() {
-        if (drainingCallQueue.compareAndSet(false, true)) {
+    private void drainQueue() {
+        do {
+            if (!drainingCallQueue.compareAndSet(false, true)) {
+                break;
+            }
+
             try {
-                doRunCallQueue();
+                doDrainQueue();
             } finally {
                 drainingCallQueue.set(false);
             }
+        } while (!callQueue.isEmpty());
+    }
+
+    private void doDrainQueue() {
+        while (true) {
+            QueueEntry entry = callQueue.poll();
+            if (done || entry == null) {
+                return;
+            }
+            done = entry.terminal;
+            entry.call.run();
         }
     }
 
-    private void doRunCallQueue() {
-        while (true) {
-            Runnable call = callQueue.poll();
-            if (call == null) {
-                return;
-            }
-            call.run();
+    private class QueueEntry {
+        private final boolean terminal;
+        private final Runnable call;
+
+        private QueueEntry(boolean terminal, Runnable call) {
+            this.terminal = terminal;
+            this.call = call;
         }
     }
 
     private enum State {
-        INITIAL,
-        SUBSCRIBED,
-        COMPLETED
+        UNINITIALIZED,
+        READABLE,
+        CLOSED
+    }
+
+    private class CancelWatcher implements Subscription {
+        private final Subscription s;
+
+        public CancelWatcher(Subscription s) {
+            this.s = s;
+        }
+
+        @Override
+        public void request(long n) {
+            s.request(n);
+        }
+
+        @Override
+        public void cancel() {
+            s.cancel();
+            close();
+        }
+    }
+
+    private class NoOpSubscription implements Subscription {
+        @Override
+        public void request(long n) {
+        }
+
+        @Override
+        public void cancel() {
+        }
     }
 }

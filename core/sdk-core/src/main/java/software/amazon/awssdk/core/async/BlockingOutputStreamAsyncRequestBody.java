@@ -20,10 +20,11 @@ import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.reactivestreams.Subscriber;
+import software.amazon.awssdk.annotations.SdkPublicApi;
 import software.amazon.awssdk.utils.CancellableOutputStream;
 import software.amazon.awssdk.utils.async.OutputStreamPublisher;
-import software.amazon.awssdk.utils.async.SimplePublisher;
 
+@SdkPublicApi
 public class BlockingOutputStreamAsyncRequestBody implements AsyncRequestBody {
     private final OutputStreamPublisher delegate = new OutputStreamPublisher();
     private final CountDownLatch subscribedLatch = new CountDownLatch(0);

@@ -20,11 +20,13 @@ import java.nio.ByteBuffer;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import org.reactivestreams.Subscriber;
+import software.amazon.awssdk.annotations.SdkInternalApi;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.async.BlockingInputStreamAsyncRequestBody;
 import software.amazon.awssdk.core.internal.util.NoopSubscription;
 import software.amazon.awssdk.utils.Logger;
 
+@SdkInternalApi
 public class InputStreamWithExecutorAsyncRequestBody implements AsyncRequestBody {
     private static final Logger log = Logger.loggerFor(InputStreamWithExecutorAsyncRequestBody.class);
 

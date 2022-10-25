@@ -17,11 +17,31 @@ package software.amazon.awssdk.utils.async;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.function.Consumer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
+import software.amazon.awssdk.utils.ThreadFactoryBuilder;
 
 public class InputStreamSubscriberTest {
     private SimplePublisher<ByteBuffer> publisher;
@@ -112,6 +132,118 @@ public class InputStreamSubscriberTest {
         assertThatThrownBy(() -> subscriber.read(new byte[0], 0, 0)).isInstanceOf(CancellationException.class);
     }
 
+    public static List<Arguments> stochastic_methodCallsSeemThreadSafe_parameters() {
+        Object[][] inputStreamOperations = {
+            { "read();", subscriberRead1() },
+            { "read(); close();", subscriberRead1().andThen(subscriberClose()) },
+            { "read(byte[]); close();", subscriberReadArray().andThen(subscriberClose()) },
+            { "read(byte[]); read(byte[]);", subscriberReadArray().andThen(subscriberReadArray()) }
+        };
+
+        Object[][] publisherOperations = {
+            { "onNext(...);", subscriberOnNext() },
+            { "onNext(...); onComplete();", subscriberOnNext().andThen(subscriberOnComplete()) },
+            { "onNext(...); onError(...);", subscriberOnNext().andThen(subscriberOnError()) },
+            { "onComplete();", subscriberOnComplete() },
+            { "onError(...);", subscriberOnError() }
+        };
+
+        List<Arguments> result = new ArrayList<>();
+        for (Object[] iso : inputStreamOperations) {
+            for (Object[] po : publisherOperations) {
+                result.add(Arguments.of(iso[1], po[1], iso[0] + " and " + po[0] + " in parallel"));
+            }
+        }
+        return result;
+    }
+
+    @ParameterizedTest(name = "{2}")
+    @MethodSource("stochastic_methodCallsSeemThreadSafe_parameters")
+    @Timeout(10)
+    public void stochastic_methodCallsSeemThreadSafe(Consumer<InputStreamSubscriber> inputStreamOperation,
+                                                     Consumer<InputStreamSubscriber> publisherOperation,
+                                                     String testName)
+        throws InterruptedException, ExecutionException {
+        int numIterations = 100;
+
+        // Read/close aren't mutually thread safe, and onNext/onComplete/onError aren't mutually thread safe, but one
+        // group of functions might be executed in parallel with the others. We try to make sure that this is safe.
+
+        ExecutorService executor = Executors.newFixedThreadPool(10, new ThreadFactoryBuilder().daemonThreads(true).build());
+        try {
+            List<Future<?>> futures = new ArrayList<>();
+            for (int i = 0; i < numIterations; i++) {
+                CountDownLatch waitingAtStartLine = new CountDownLatch(2);
+                CountDownLatch startLine = new CountDownLatch(0);
+
+                InputStreamSubscriber subscriber = new InputStreamSubscriber();
+                subscriber.onSubscribe(mockSubscription(subscriber));
+
+                futures.add(executor.submit(() -> {
+                    waitingAtStartLine.countDown();
+                    startLine.await();
+                    inputStreamOperation.accept(subscriber);
+                    return null;
+                }));
+                futures.add(executor.submit(() -> {
+                    waitingAtStartLine.countDown();
+                    startLine.await();
+                    publisherOperation.accept(subscriber);
+                    return null;
+                }));
+
+                waitingAtStartLine.await();
+                startLine.countDown();
+            }
+
+            for (Future<?> future : futures) {
+                future.get();
+            }
+        } finally {
+            executor.shutdownNow();
+        }
+    }
+
+    public static Consumer<InputStreamSubscriber> subscriberOnNext() {
+        return s -> s.onNext(ByteBuffer.allocate(1));
+    }
+
+    public static Consumer<InputStreamSubscriber> subscriberOnComplete() {
+        return s -> s.onComplete();
+    }
+
+    public static Consumer<InputStreamSubscriber> subscriberOnError() {
+        return s -> s.onError(new Throwable());
+    }
+
+    public static Consumer<InputStreamSubscriber> subscriberRead1() {
+        return s -> s.read();
+    }
+
+    public static Consumer<InputStreamSubscriber> subscriberReadArray() {
+        return s -> s.read(new byte[4]);
+    }
+
+    public static Consumer<InputStreamSubscriber> subscriberClose() {
+        return s -> s.close();
+    }
+
+    private Subscription mockSubscription(Subscriber<ByteBuffer> subscriber) {
+        Subscription subscription = mock(Subscription.class);
+        doAnswer(new Answer<Void>() {
+            boolean done = false;
+            @Override
+            public Void answer(InvocationOnMock invocation) {
+                if (!done) {
+                    subscriber.onNext(ByteBuffer.wrap(new byte[] { 0, 1, 2, 3, 4, 5, 6, 7 }));
+                    subscriber.onComplete();
+                    done = true;
+                }
+                return null;
+            }
+        }).when(subscription).request(anyLong());
+        return subscription;
+    }
 
 
     private ByteBuffer byteBufferOfLength(int length) {
@@ -124,5 +256,4 @@ public class InputStreamSubscriberTest {
         buffer.flip();
         return buffer;
     }
-
 }

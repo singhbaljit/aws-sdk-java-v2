@@ -18,7 +18,9 @@ package software.amazon.awssdk.utils.async;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -30,6 +32,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -107,14 +110,14 @@ public class ByteBufferStoringSubscriberTest {
             doAnswer(i -> {
                 int bufferN = bufferNumber.getAndIncrement();
 
-                for (int j = 0; j < i.<Integer>getArgument(0); j++) {
+                for (long j = 0; j < i.<Long>getArgument(0); j++) {
                     if (bufferN <= outputBufferSize + 1) {
                         subscriber.onNext(byteBufferWithContent(bufferN));
                     }
                 }
 
                 return null;
-            }).when(subscription).request(anyInt());
+            }).when(subscription).request(anyLong());
 
             subscriber.onSubscribe(subscription);
 
@@ -189,6 +192,37 @@ public class ByteBufferStoringSubscriberTest {
         } finally {
             executor.shutdownNow();
         }
+    }
+
+    @Test
+    @Timeout(10)
+    public void blockingTransfer_stopsOnInterrupt() throws InterruptedException {
+        ByteBufferStoringSubscriber subscriber = new ByteBufferStoringSubscriber(Long.MAX_VALUE);
+
+        AtomicBoolean threadIsInterruptedInCatch = new AtomicBoolean(false);
+        AtomicReference<Throwable> failureReason = new AtomicReference<>();
+
+        subscriber.onSubscribe(mock(Subscription.class));
+
+        CountDownLatch threadIsRunning = new CountDownLatch(1);
+        Thread thread = new Thread(() -> {
+            try {
+                threadIsRunning.countDown();
+                subscriber.blockingTransferTo(ByteBuffer.allocate(1024));
+            } catch (Throwable t) {
+                threadIsInterruptedInCatch.set(Thread.currentThread().isInterrupted());
+                failureReason.set(t);
+            }
+        });
+        thread.setDaemon(true);
+        thread.start();
+
+        threadIsRunning.await();
+        thread.interrupt();
+        thread.join();
+
+        assertThat(threadIsInterruptedInCatch).isTrue();
+        assertThat(failureReason.get()).hasRootCauseInstanceOf(InterruptedException.class);
     }
 
     @Test

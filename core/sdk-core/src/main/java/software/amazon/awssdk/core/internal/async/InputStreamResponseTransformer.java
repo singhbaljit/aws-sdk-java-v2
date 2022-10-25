@@ -17,13 +17,14 @@ package software.amazon.awssdk.core.internal.async;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
+import software.amazon.awssdk.annotations.SdkInternalApi;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.SdkResponse;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
-import software.amazon.awssdk.core.async.ResponsePublisher;
 import software.amazon.awssdk.core.async.SdkPublisher;
 import software.amazon.awssdk.utils.async.InputStreamSubscriber;
 
+@SdkInternalApi
 public class InputStreamResponseTransformer<ResponseT extends SdkResponse>
     implements AsyncResponseTransformer<ResponseT, ResponseInputStream<ResponseT>> {
 
