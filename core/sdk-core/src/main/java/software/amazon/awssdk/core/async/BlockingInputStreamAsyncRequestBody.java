@@ -48,6 +48,9 @@ public class BlockingInputStreamAsyncRequestBody implements AsyncRequestBody {
     /**
      * Block the calling thread and write the provided input stream to the downstream service.
      *
+     * <p>This method will block the calling thread immediately. This means that this request body should usually be passed to
+     * the SDK before this method is called.
+     *
      * <p>This method will return the amount of data written when the entire input stream has been written. This will throw an
      * exception if writing the input stream has failed.
      */

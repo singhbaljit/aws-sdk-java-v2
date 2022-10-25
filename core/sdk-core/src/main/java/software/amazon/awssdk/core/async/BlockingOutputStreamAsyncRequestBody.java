@@ -41,10 +41,10 @@ public class BlockingOutputStreamAsyncRequestBody implements AsyncRequestBody {
     }
 
     /**
-     * Return an output stream to which blocking writes can be made. Writes w
+     * Return an output stream to which blocking writes can be made to the downstream service.
      *
-     * <p>This method will return the amount of data written when the entire input stream has been written. This will throw an
-     * exception if writing the input stream has failed.
+     * <p>This method will block the calling thread until the SDK is connected to the service. This means that this request body
+     * should usually be passed to the SDK before this method is called.
      */
     public CancellableOutputStream outputStream() {
         waitForSubscriptionIfNeeded();

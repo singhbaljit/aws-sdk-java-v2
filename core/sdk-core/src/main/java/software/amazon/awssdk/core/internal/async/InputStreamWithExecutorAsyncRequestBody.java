@@ -39,7 +39,7 @@ public class InputStreamWithExecutorAsyncRequestBody implements AsyncRequestBody
     public InputStreamWithExecutorAsyncRequestBody(InputStream inputStream,
                                                    Long contentLength,
                                                    ExecutorService executor) {
-        this.delegate = new BlockingInputStreamAsyncRequestBody(contentLength);
+        this.delegate = AsyncRequestBody.forBlockingInputStream(contentLength);
         this.inputStream = inputStream;
         this.executor = executor;
     }

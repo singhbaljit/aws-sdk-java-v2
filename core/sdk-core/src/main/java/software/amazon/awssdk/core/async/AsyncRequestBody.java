@@ -163,10 +163,24 @@ public interface AsyncRequestBody extends SdkPublisher<ByteBuffer> {
         return fromBytes(BinaryUtils.copyAllBytesFrom(byteBuffer));
     }
 
+    /**
+     * Creates a {@link AsyncRequestBody} from a {@link InputStream}.
+     *
+     * <p>An {@link ExecutorService} is required in order to perform the blocking data reads, to prevent blocking the
+     * non-blocking event loop threads owned by the SDK.
+     */
     static AsyncRequestBody fromInputStream(InputStream inputStream, Long contentLength, ExecutorService executor) {
         return new InputStreamWithExecutorAsyncRequestBody(inputStream, contentLength, executor);
     }
 
+    /**
+     * Creates a {@link BlockingInputStreamAsyncRequestBody} to use for writing an input stream to the downstream service.
+     *
+     * <p><b>Example Usage</b>
+     *
+     * <pre>
+     * </pre>
+     */
     static BlockingInputStreamAsyncRequestBody forBlockingInputStream(Long contentLength) {
         return new BlockingInputStreamAsyncRequestBody(contentLength);
     }
