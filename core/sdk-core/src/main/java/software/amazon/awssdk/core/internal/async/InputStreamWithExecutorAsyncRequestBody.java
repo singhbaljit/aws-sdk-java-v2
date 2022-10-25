@@ -19,6 +19,7 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import org.reactivestreams.Subscriber;
 import software.amazon.awssdk.annotations.SdkInternalApi;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
@@ -33,6 +34,7 @@ public class InputStreamWithExecutorAsyncRequestBody implements AsyncRequestBody
     private final BlockingInputStreamAsyncRequestBody delegate;
     private final InputStream inputStream;
     private final ExecutorService executor;
+    private Future<?> writeFuture;
 
     public InputStreamWithExecutorAsyncRequestBody(InputStream inputStream,
                                                    Long contentLength,
@@ -50,7 +52,7 @@ public class InputStreamWithExecutorAsyncRequestBody implements AsyncRequestBody
     @Override
     public void subscribe(Subscriber<? super ByteBuffer> s) {
         try {
-            executor.submit(this::doBlockingWrite);
+            this.writeFuture = executor.submit(this::doBlockingWrite);
             delegate.subscribe(s);
         } catch (Throwable t) {
             s.onSubscribe(new NoopSubscription(s));
@@ -58,11 +60,16 @@ public class InputStreamWithExecutorAsyncRequestBody implements AsyncRequestBody
         }
     }
 
+    public Future<?> writeFuture() {
+        return writeFuture;
+    }
+
     private void doBlockingWrite() {
         try {
-            delegate.doBlockingWrite(inputStream);
+            delegate.writeInputStream(inputStream);
         } catch (Throwable t) {
             log.error(() -> "Encountered error while writing input stream to service.", t);
+            throw t;
         }
     }
 }

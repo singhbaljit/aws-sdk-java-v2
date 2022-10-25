@@ -24,16 +24,28 @@ import software.amazon.awssdk.annotations.SdkPublicApi;
 import software.amazon.awssdk.utils.CancellableOutputStream;
 import software.amazon.awssdk.utils.async.OutputStreamPublisher;
 
+/**
+ * An implementation of {@link AsyncRequestBody} that allows performing a blocking write of an output stream to a downstream
+ * service.
+ *
+ * <p>See {@link AsyncRequestBody#forBlockingOutputStream(Long)}.
+ */
 @SdkPublicApi
 public class BlockingOutputStreamAsyncRequestBody implements AsyncRequestBody {
     private final OutputStreamPublisher delegate = new OutputStreamPublisher();
     private final CountDownLatch subscribedLatch = new CountDownLatch(0);
     private final Long contentLength;
 
-    public BlockingOutputStreamAsyncRequestBody(Long contentLength) {
+    BlockingOutputStreamAsyncRequestBody(Long contentLength) {
         this.contentLength = contentLength;
     }
 
+    /**
+     * Return an output stream to which blocking writes can be made. Writes w
+     *
+     * <p>This method will return the amount of data written when the entire input stream has been written. This will throw an
+     * exception if writing the input stream has failed.
+     */
     public CancellableOutputStream outputStream() {
         waitForSubscriptionIfNeeded();
         return delegate;

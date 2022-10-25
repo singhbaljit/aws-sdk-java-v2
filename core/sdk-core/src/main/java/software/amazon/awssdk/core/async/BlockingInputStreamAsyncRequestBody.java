@@ -24,13 +24,19 @@ import org.reactivestreams.Subscriber;
 import software.amazon.awssdk.annotations.SdkPublicApi;
 import software.amazon.awssdk.utils.async.InputStreamConsumingPublisher;
 
+/**
+ * An implementation of {@link AsyncRequestBody} that allows performing a blocking write of an input stream to a downstream
+ * service.
+ *
+ * <p>See {@link AsyncRequestBody#forBlockingInputStream(Long)}.
+ */
 @SdkPublicApi
 public class BlockingInputStreamAsyncRequestBody implements AsyncRequestBody {
     private final InputStreamConsumingPublisher delegate = new InputStreamConsumingPublisher();
     private final CountDownLatch subscribedLatch = new CountDownLatch(0);
     private final Long contentLength;
 
-    public BlockingInputStreamAsyncRequestBody(Long contentLength) {
+    BlockingInputStreamAsyncRequestBody(Long contentLength) {
         this.contentLength = contentLength;
     }
 
@@ -39,10 +45,16 @@ public class BlockingInputStreamAsyncRequestBody implements AsyncRequestBody {
         return Optional.ofNullable(contentLength);
     }
 
-    public void doBlockingWrite(InputStream inputStream) {
+    /**
+     * Block the calling thread and write the provided input stream to the downstream service.
+     *
+     * <p>This method will return the amount of data written when the entire input stream has been written. This will throw an
+     * exception if writing the input stream has failed.
+     */
+    public long writeInputStream(InputStream inputStream) {
         try {
             waitForSubscriptionIfNeeded();
-            delegate.doBlockingWrite(inputStream);
+            return delegate.doBlockingWrite(inputStream);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             delegate.cancel();
