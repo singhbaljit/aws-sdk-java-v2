@@ -15,61 +15,109 @@
 
 package software.amazon.awssdk.core.internal.async;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.reactivestreams.Subscriber;
 import software.amazon.awssdk.annotations.SdkInternalApi;
+import software.amazon.awssdk.annotations.SdkTestInternalApi;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.async.BlockingInputStreamAsyncRequestBody;
+import software.amazon.awssdk.core.exception.NonRetryableException;
+import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.internal.util.NoopSubscription;
+import software.amazon.awssdk.utils.IoUtils;
 import software.amazon.awssdk.utils.Logger;
+import software.amazon.awssdk.utils.Validate;
 
 @SdkInternalApi
 public class InputStreamWithExecutorAsyncRequestBody implements AsyncRequestBody {
     private static final Logger log = Logger.loggerFor(InputStreamWithExecutorAsyncRequestBody.class);
 
-    private final BlockingInputStreamAsyncRequestBody delegate;
+    private final Object subscribeLock = new Object();
     private final InputStream inputStream;
+    private final Long contentLength;
     private final ExecutorService executor;
+
     private Future<?> writeFuture;
+    private BlockingInputStreamAsyncRequestBody delegate;
 
     public InputStreamWithExecutorAsyncRequestBody(InputStream inputStream,
                                                    Long contentLength,
                                                    ExecutorService executor) {
-        this.delegate = AsyncRequestBody.forBlockingInputStream(contentLength);
         this.inputStream = inputStream;
+        this.contentLength = contentLength;
         this.executor = executor;
+        IoUtils.markStreamWithMaxReadLimit(inputStream);
     }
 
     @Override
     public Optional<Long> contentLength() {
-        return delegate.contentLength();
+        return Optional.ofNullable(contentLength);
     }
 
     @Override
     public void subscribe(Subscriber<? super ByteBuffer> s) {
-        try {
-            this.writeFuture = executor.submit(this::doBlockingWrite);
-            delegate.subscribe(s);
-        } catch (Throwable t) {
-            s.onSubscribe(new NoopSubscription(s));
-            s.onError(t);
+        // Each subscribe cancels the previous subscribe.
+        synchronized (subscribeLock) {
+            try {
+                if (writeFuture != null) {
+                    writeFuture.cancel(true);
+                    waitForCancellation(writeFuture); // Wait for the cancellation
+                    tryReset(inputStream);
+                }
+
+                delegate = AsyncRequestBody.forBlockingInputStream(contentLength);
+                writeFuture = executor.submit(() -> doBlockingWrite(delegate));
+                delegate.subscribe(s);
+            } catch (Throwable t) {
+                s.onSubscribe(new NoopSubscription(s));
+                s.onError(t);
+            }
         }
     }
 
-    public Future<?> writeFuture() {
-        return writeFuture;
+    private void tryReset(InputStream inputStream) {
+        try {
+            inputStream.reset();
+        } catch (IOException e) {
+            throw new UncheckedIOException("Request cannot be retried, because the request stream could not be reset.", e);
+        }
     }
 
-    private void doBlockingWrite() {
+    @SdkTestInternalApi
+    public Future<?> activeWriteFuture() {
+        synchronized (subscribeLock) {
+            return writeFuture;
+        }
+    }
+
+    private void doBlockingWrite(BlockingInputStreamAsyncRequestBody asyncRequestBody) {
         try {
-            delegate.writeInputStream(inputStream);
+            asyncRequestBody.writeInputStream(inputStream);
         } catch (Throwable t) {
-            log.error(() -> "Encountered error while writing input stream to service.", t);
+            log.debug(() -> "Encountered error while writing input stream to service.", t);
             throw t;
+        }
+    }
+
+    private void waitForCancellation(Future<?> writeFuture) {
+        try {
+            writeFuture.get(10, TimeUnit.SECONDS);
+        } catch (ExecutionException e) {
+            // Expected - we cancelled.
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        } catch (TimeoutException e) {
+            throw new IllegalStateException("Timed out waiting to reset the input stream.", e);
         }
     }
 }

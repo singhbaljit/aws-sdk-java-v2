@@ -23,6 +23,7 @@ import static software.amazon.awssdk.utils.async.SimplePublisher.QueueEntry.Type
 
 import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -73,6 +74,8 @@ public final class SimplePublisher<T> implements Publisher<T> {
      * processing and simplified reasoning about thread safety.
      */
     private final Queue<QueueEntry<T>> eventQueue = new ConcurrentLinkedQueue<>();
+
+    private final AtomicBoolean cancelled = new AtomicBoolean(false);
 
     /**
      * When processing the {@link #eventQueue}, these are the entries that should be skipped (and failed). This is used to
@@ -153,7 +156,6 @@ public final class SimplePublisher<T> implements Publisher<T> {
         OnCompleteQueueEntry<T> entry = new OnCompleteQueueEntry<>();
 
         try {
-            validateRejectState();
             setRejectExceptionOrThrow(() -> new IllegalStateException("complete() has been invoked"));
             eventQueue.add(entry);
             processEventQueue();
@@ -185,7 +187,6 @@ public final class SimplePublisher<T> implements Publisher<T> {
         OnErrorQueueEntry<T> entry = new OnErrorQueueEntry<>(error);
 
         try {
-            validateRejectState();
             setRejectExceptionOrThrow(() -> new IllegalStateException("error() has been invoked", error));
             eventQueue.add(entry);
             processEventQueue();
@@ -354,7 +355,7 @@ public final class SimplePublisher<T> implements Publisher<T> {
      */
     private void validateRejectState() {
         if (rejectException.get() != null) {
-            throw rejectException.get().get();
+            throw new IllegalStateException(rejectException.get().get());
         }
     }
 
@@ -363,7 +364,7 @@ public final class SimplePublisher<T> implements Publisher<T> {
      */
     private void setRejectExceptionOrThrow(Supplier<RuntimeException> rejectedException) {
         if (!rejectException.compareAndSet(null, rejectedException)) {
-            throw rejectException.get().get();
+            throw new IllegalStateException(rejectException.get().get());
         }
     }
 
@@ -401,10 +402,9 @@ public final class SimplePublisher<T> implements Publisher<T> {
             log.trace(() -> "Received cancel()");
 
             // Create exception here instead of in supplier to preserve a more-useful stack trace.
-            IllegalStateException failure = new IllegalStateException("A downstream publisher has cancelled the subscription.");
-            rejectException.compareAndSet(null, () -> failure);
-            eventQueue.add(new CancelQueueEntry<>());
+            cancelled.set(true);
             entryTypesToFail.addAll(asList(ON_NEXT, ON_COMPLETE, ON_ERROR));
+            eventQueue.add(new CancelQueueEntry<>());
             processEventQueue();
         }
     }

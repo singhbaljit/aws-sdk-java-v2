@@ -50,7 +50,7 @@ class InputStreamWithExecutorAsyncRequestBodyTest {
             os.write(3);
             os.close();
 
-            asyncRequestBody.writeFuture().get();
+            asyncRequestBody.activeWriteFuture().get();
 
             ByteBuffer output = ByteBuffer.allocate(8);
             assertThat(subscriber.transferTo(output)).isEqualTo(TransferResult.END_OF_STREAM);
@@ -80,7 +80,7 @@ class InputStreamWithExecutorAsyncRequestBodyTest {
 
             ByteBufferStoringSubscriber subscriber = new ByteBufferStoringSubscriber(8);
             asyncRequestBody.subscribe(subscriber);
-            assertThatThrownBy(() -> asyncRequestBody.writeFuture().get()).hasRootCauseInstanceOf(IOException.class);
+            assertThatThrownBy(() -> asyncRequestBody.activeWriteFuture().get()).hasRootCauseInstanceOf(IOException.class);
             assertThatThrownBy(() -> subscriber.transferTo(ByteBuffer.allocate(8))).hasRootCauseInstanceOf(IOException.class);
         } finally {
             executor.shutdownNow();
