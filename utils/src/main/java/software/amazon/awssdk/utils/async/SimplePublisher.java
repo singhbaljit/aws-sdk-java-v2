@@ -21,16 +21,15 @@ import static software.amazon.awssdk.utils.async.SimplePublisher.QueueEntry.Type
 import static software.amazon.awssdk.utils.async.SimplePublisher.QueueEntry.Type.ON_ERROR;
 import static software.amazon.awssdk.utils.async.SimplePublisher.QueueEntry.Type.ON_NEXT;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
@@ -75,8 +74,6 @@ public final class SimplePublisher<T> implements Publisher<T> {
      */
     private final Queue<QueueEntry<T>> eventQueue = new ConcurrentLinkedQueue<>();
 
-    private final AtomicBoolean cancelled = new AtomicBoolean(false);
-
     /**
      * When processing the {@link #eventQueue}, these are the entries that should be skipped (and failed). This is used to
      * safely drain the queue when there are urgent events needing processing, like a {@link Subscription#cancel()}.
@@ -89,18 +86,11 @@ public final class SimplePublisher<T> implements Publisher<T> {
     private final AtomicBoolean processingQueue = new AtomicBoolean(false);
 
     /**
-     * An exception that should be raised to any failed {@link #send(Object)}, {@link #complete()} or {@link #error(Throwable)}
-     * operations. This is used to stop accepting messages after the downstream subscription is cancelled or after the
-     * caller sends a {@code complete()} or {@code #error()}.
-     *
-     * <p>This is a supplier to avoid the cost of creating an exception in the successful code path.
-     */
-    private final AtomicReference<Supplier<RuntimeException>> rejectException = new AtomicReference<>();
-
-    /**
      * The subscriber provided via {@link #subscribe(Subscriber)}. This publisher only supports a single subscriber.
      */
     private Subscriber<? super T> subscriber;
+
+    private final Map<QueueEntry.Type, Throwable> failureMessages = new HashMap<>();
 
     /**
      * Send a message using this publisher.
@@ -126,7 +116,6 @@ public final class SimplePublisher<T> implements Publisher<T> {
         OnNextQueueEntry<T> entry = new OnNextQueueEntry<>(value);
         try {
             Validate.notNull(value, "Null cannot be written.");
-            validateRejectState();
             eventQueue.add(entry);
             processEventQueue();
         } catch (RuntimeException t) {
@@ -156,7 +145,6 @@ public final class SimplePublisher<T> implements Publisher<T> {
         OnCompleteQueueEntry<T> entry = new OnCompleteQueueEntry<>();
 
         try {
-            setRejectExceptionOrThrow(() -> new IllegalStateException("complete() has been invoked"));
             eventQueue.add(entry);
             processEventQueue();
         } catch (RuntimeException t) {
@@ -187,7 +175,6 @@ public final class SimplePublisher<T> implements Publisher<T> {
         OnErrorQueueEntry<T> entry = new OnErrorQueueEntry<>(error);
 
         try {
-            setRejectExceptionOrThrow(() -> new IllegalStateException("error() has been invoked", error));
             eventQueue.add(entry);
             processEventQueue();
         } catch (RuntimeException t) {
@@ -298,23 +285,22 @@ public final class SimplePublisher<T> implements Publisher<T> {
      * Return true if we should process the provided queue entry.
      */
     private boolean shouldProcessQueueEntry(QueueEntry<T> entry) {
-        if (subscriber == null) {
-            // We don't have a subscriber yet.
-            return false;
-        }
-
         if (entry == null) {
             // The queue is empty.
             return false;
         }
 
-        if (entry.type() != ON_NEXT) {
-            // This event isn't an on-next event, so we don't need subscriber demand in order to process it.
+        if (entryTypesToFail.contains(entry.type())) {
             return true;
         }
 
-        if (entryTypesToFail.contains(ON_NEXT)) {
-            // This is an on-next call (decided above), but we're failing on-next calls. Go ahead and fail it.
+        if (subscriber == null) {
+            // We don't have a subscriber yet.
+            return false;
+        }
+
+        if (entry.type() != ON_NEXT) {
+            // This event isn't an on-next event, so we don't need subscriber demand in order to process it.
             return true;
         }
 
@@ -347,24 +333,6 @@ public final class SimplePublisher<T> implements Publisher<T> {
         } catch (Throwable t) {
             t.addSuppressed(cause);
             log.error(() -> "Failed while processing a failure. This could result in stuck futures.", t);
-        }
-    }
-
-    /**
-     * Ensure that {@link #rejectException} is null. If it is not, throw the exception.
-     */
-    private void validateRejectState() {
-        if (rejectException.get() != null) {
-            throw new IllegalStateException(rejectException.get().get());
-        }
-    }
-
-    /**
-     * Set the {@link #rejectException}, if it is null. If it is not, throw the exception.
-     */
-    private void setRejectExceptionOrThrow(Supplier<RuntimeException> rejectedException) {
-        if (!rejectException.compareAndSet(null, rejectedException)) {
-            throw new IllegalStateException(rejectException.get().get());
         }
     }
 
@@ -402,7 +370,6 @@ public final class SimplePublisher<T> implements Publisher<T> {
             log.trace(() -> "Received cancel()");
 
             // Create exception here instead of in supplier to preserve a more-useful stack trace.
-            cancelled.set(true);
             entryTypesToFail.addAll(asList(ON_NEXT, ON_COMPLETE, ON_ERROR));
             eventQueue.add(new CancelQueueEntry<>());
             processEventQueue();

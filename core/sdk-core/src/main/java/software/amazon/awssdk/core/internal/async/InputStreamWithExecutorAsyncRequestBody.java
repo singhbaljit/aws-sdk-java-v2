@@ -20,6 +20,7 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.util.Optional;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -111,7 +112,7 @@ public class InputStreamWithExecutorAsyncRequestBody implements AsyncRequestBody
     private void waitForCancellation(Future<?> writeFuture) {
         try {
             writeFuture.get(10, TimeUnit.SECONDS);
-        } catch (ExecutionException e) {
+        } catch (ExecutionException | CancellationException e) {
             // Expected - we cancelled.
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

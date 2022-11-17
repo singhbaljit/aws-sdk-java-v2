@@ -27,6 +27,8 @@ import software.amazon.awssdk.annotations.SdkProtectedApi;
  */
 @SdkProtectedApi
 public final class CompletableFutureUtils {
+    private static final Logger log = Logger.loggerFor(CompletableFutureUtils.class);
+
     private CompletableFutureUtils() {
     }
 
@@ -154,9 +156,6 @@ public final class CompletableFutureUtils {
             throw new CompletionException("Interrupted while waiting on a future.", e);
         } catch (ExecutionException e) {
             Throwable cause = e.getCause();
-            if (cause instanceof RuntimeException) {
-                throw (RuntimeException) cause;
-            }
             if (cause instanceof Error) {
                 throw (Error) cause;
             }

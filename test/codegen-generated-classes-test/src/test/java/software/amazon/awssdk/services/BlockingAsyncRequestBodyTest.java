@@ -31,8 +31,10 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.async.BlockingInputStreamAsyncRequestBody;
@@ -44,9 +46,14 @@ import software.amazon.awssdk.services.protocolrestjson.model.StreamingInputOper
 import software.amazon.awssdk.utils.StringInputStream;
 import software.amazon.awssdk.utils.ThreadFactoryBuilder;
 
+// @Timeout(5)
 public class BlockingAsyncRequestBodyTest {
     private final WireMockServer wireMock = new WireMockServer(0);
     private ProtocolRestJsonAsyncClient client;
+
+    static {
+        Assertions.setMaxStackTraceElementsDisplayed(100);
+    }
 
     @BeforeEach
     public void setup() {
@@ -65,7 +72,7 @@ public class BlockingAsyncRequestBodyTest {
             wireMock.stubFor(post(anyUrl()).willReturn(aResponse().withStatus(200).withBody("{}")));
             client.streamingInputOperation(StreamingInputOperationRequest.builder().build(),
                                            AsyncRequestBody.fromInputStream(new StringInputStream("Hello"),
-                                                                            4L,
+                                                                            5L,
                                                                             executorService))
                   .join();
             List<LoggedRequest> requests = wireMock.findAll(allRequests());
