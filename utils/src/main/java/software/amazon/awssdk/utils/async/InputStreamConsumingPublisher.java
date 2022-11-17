@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import software.amazon.awssdk.annotations.SdkProtectedApi;
@@ -43,7 +44,9 @@ public class InputStreamConsumingPublisher implements Publisher<ByteBuffer> {
                     dataWritten += dataLength;
                     joinInterruptibly(delegate.send(ByteBuffer.wrap(data, 0, dataLength)));
                 } else if (dataLength < 0) {
-                    joinInterruptibly(delegate.complete());
+                    // We ignore cancel failure on completion, because as long as our onNext calls have succeeded, the
+                    // subscriber got everything we wanted to send.
+                    joinInterruptiblyIgnoringCancellation(delegate.complete());
                     break;
                 }
             }
@@ -64,5 +67,13 @@ public class InputStreamConsumingPublisher implements Publisher<ByteBuffer> {
     @Override
     public void subscribe(Subscriber<? super ByteBuffer> s) {
         delegate.subscribe(s);
+    }
+
+    private void joinInterruptiblyIgnoringCancellation(CompletableFuture<Void> complete) {
+        try {
+            joinInterruptibly(complete);
+        } catch (CancellationException e) {
+            // Ignore
+        }
     }
 }

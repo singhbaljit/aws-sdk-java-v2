@@ -27,7 +27,9 @@ import com.github.tomakehurst.wiremock.verification.LoggedRequest;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -38,6 +40,8 @@ import org.junit.jupiter.api.Timeout;
 import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.async.BlockingInputStreamAsyncRequestBody;
+import software.amazon.awssdk.core.async.BlockingOutputStreamAsyncRequestBody;
+import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.exception.SdkServiceException;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.protocolrestjson.ProtocolRestJsonAsyncClient;
@@ -46,7 +50,7 @@ import software.amazon.awssdk.services.protocolrestjson.model.StreamingInputOper
 import software.amazon.awssdk.utils.StringInputStream;
 import software.amazon.awssdk.utils.ThreadFactoryBuilder;
 
-// @Timeout(5)
+@Timeout(5)
 public class BlockingAsyncRequestBodyTest {
     private final WireMockServer wireMock = new WireMockServer(0);
     private ProtocolRestJsonAsyncClient client;
@@ -158,8 +162,10 @@ public class BlockingAsyncRequestBodyTest {
         BlockingInputStreamAsyncRequestBody body = AsyncRequestBody.forBlockingInputStream(5L);
         CompletableFuture<StreamingInputOperationResponse> responseFuture =
             client.streamingInputOperation(StreamingInputOperationRequest.builder().build(), body);
-        body.writeInputStream(new FailOnReadInputStream());
-        assertThatThrownBy(responseFuture::join).hasRootCauseInstanceOf(IOException.class);
+        assertThatThrownBy(() -> body.writeInputStream(new FailOnReadInputStream())).hasRootCauseInstanceOf(IOException.class);
+        assertThatThrownBy(responseFuture::get)
+            .hasCauseInstanceOf(SdkClientException.class)
+            .hasMessageContaining("AsyncRequestBody.forBlockingInputStream does not support retries");
     }
 
     @Test
@@ -179,8 +185,61 @@ public class BlockingAsyncRequestBodyTest {
         BlockingInputStreamAsyncRequestBody body = AsyncRequestBody.forBlockingInputStream(5L);
         CompletableFuture<StreamingInputOperationResponse> responseFuture =
             client.streamingInputOperation(StreamingInputOperationRequest.builder().build(), body);
-        body.writeInputStream(new FailOnReadInputStream());
+        body.writeInputStream(new StringInputStream("Hello"));
+        assertThatThrownBy(responseFuture::get)
+            .hasCauseInstanceOf(SdkClientException.class)
+            .hasMessageContaining("AsyncRequestBody.forBlockingInputStream does not support retries");
+    }
+
+    @Test
+    public void blockingOutputStreamWithoutExecutor_sendsRightValues() throws IOException {
+        wireMock.stubFor(post(anyUrl()).willReturn(aResponse().withStatus(200).withBody("{}")));
+
+        BlockingOutputStreamAsyncRequestBody body = AsyncRequestBody.forBlockingOutputStream(5L);
+        CompletableFuture<?> responseFuture =
+            client.streamingInputOperation(StreamingInputOperationRequest.builder().build(), body);
+        body.outputStream().write("Hello".getBytes(StandardCharsets.UTF_8));
+        responseFuture.join();
+
+        List<LoggedRequest> requests = wireMock.findAll(allRequests());
+        assertThat(requests).singleElement()
+                            .extracting(LoggedRequest::getBody)
+                            .extracting(String::new)
+                            .isEqualTo("Hello");
+    }
+
+    @Test
+    public void blockingOutputStreamWithoutExecutor_propagatesCancellations() {
+        wireMock.stubFor(post(anyUrl()).willReturn(aResponse().withStatus(200).withBody("{}")));
+
+        BlockingOutputStreamAsyncRequestBody body = AsyncRequestBody.forBlockingOutputStream(5L);
+        CompletableFuture<StreamingInputOperationResponse> responseFuture =
+            client.streamingInputOperation(StreamingInputOperationRequest.builder().build(), body);
+        body.outputStream().cancel();
+        assertThatThrownBy(responseFuture::get).hasRootCauseInstanceOf(CancellationException.class);
+    }
+
+    @Test
+    public void blockingOutputStreamWithoutExecutor_propagates400Failures() throws IOException {
+        wireMock.stubFor(post(anyUrl()).willReturn(aResponse().withStatus(404).withBody("{}")));
+        BlockingOutputStreamAsyncRequestBody body = AsyncRequestBody.forBlockingOutputStream(5L);
+        CompletableFuture<?> responseFuture =
+            client.streamingInputOperation(StreamingInputOperationRequest.builder().build(), body);
+        body.outputStream().write("Hello".getBytes(StandardCharsets.UTF_8));
         assertThatThrownBy(responseFuture::join).hasCauseInstanceOf(SdkServiceException.class);
+    }
+
+    @Test
+    public void blockingOutputStreamWithoutExecutor_propagates500Failures() throws IOException {
+        wireMock.stubFor(post(anyUrl()).willReturn(aResponse().withStatus(500).withBody("{}")));
+
+        BlockingOutputStreamAsyncRequestBody body = AsyncRequestBody.forBlockingOutputStream(5L);
+        CompletableFuture<StreamingInputOperationResponse> responseFuture =
+            client.streamingInputOperation(StreamingInputOperationRequest.builder().build(), body);
+        body.outputStream().write("Hello".getBytes(StandardCharsets.UTF_8));
+        assertThatThrownBy(responseFuture::get)
+            .hasCauseInstanceOf(SdkClientException.class)
+            .hasMessageContaining("AsyncRequestBody.forBlockingOutputStream does not support retries");
     }
 
     private static class FailOnReadInputStream extends InputStream {

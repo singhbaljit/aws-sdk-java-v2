@@ -20,8 +20,11 @@ import java.nio.ByteBuffer;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.reactivestreams.Subscriber;
 import software.amazon.awssdk.annotations.SdkPublicApi;
+import software.amazon.awssdk.core.exception.NonRetryableException;
+import software.amazon.awssdk.core.internal.util.NoopSubscription;
 import software.amazon.awssdk.utils.async.InputStreamConsumingPublisher;
 
 /**
@@ -34,6 +37,7 @@ import software.amazon.awssdk.utils.async.InputStreamConsumingPublisher;
 public class BlockingInputStreamAsyncRequestBody implements AsyncRequestBody {
     private final InputStreamConsumingPublisher delegate = new InputStreamConsumingPublisher();
     private final CountDownLatch subscribedLatch = new CountDownLatch(0);
+    private final AtomicBoolean subscribeCalled = new AtomicBoolean(false);
     private final Long contentLength;
 
     BlockingInputStreamAsyncRequestBody(Long contentLength) {
@@ -67,8 +71,15 @@ public class BlockingInputStreamAsyncRequestBody implements AsyncRequestBody {
 
     @Override
     public void subscribe(Subscriber<? super ByteBuffer> s) {
-        delegate.subscribe(s);
-        subscribedLatch.countDown();
+        if (subscribeCalled.compareAndSet(false, true)) {
+            delegate.subscribe(s);
+            subscribedLatch.countDown();
+        } else {
+            s.onSubscribe(new NoopSubscription(s));
+            s.onError(NonRetryableException.create("A retry was attempted, but AsyncRequestBody.forBlockingInputStream does not "
+                                                   + "support retries. Consider using AsyncRequestBody.fromInputStream with an "
+                                                   + "input stream that supports mark/reset to get retry support."));
+        }
     }
 
     private void waitForSubscriptionIfNeeded() throws InterruptedException {

@@ -15,11 +15,10 @@
 
 package software.amazon.awssdk.utils;
 
-import java.io.IOException;
 import java.io.OutputStream;
 import software.amazon.awssdk.annotations.SdkProtectedApi;
 
 @SdkProtectedApi
 public abstract class CancellableOutputStream extends OutputStream {
-    public abstract void cancel() throws IOException;
+    public abstract void cancel();
 }
