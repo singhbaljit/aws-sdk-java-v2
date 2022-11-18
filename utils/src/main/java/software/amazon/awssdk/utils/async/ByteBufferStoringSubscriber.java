@@ -19,6 +19,7 @@ import static software.amazon.awssdk.utils.async.StoringSubscriber.EventType.ON_
 
 import java.nio.ByteBuffer;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.atomic.AtomicLong;
 import org.reactivestreams.Subscriber;
@@ -51,12 +52,14 @@ public class ByteBufferStoringSubscriber implements Subscriber<ByteBuffer> {
      */
     private final StoringSubscriber<ByteBuffer> storingSubscriber;
 
+    private final CountDownLatch subscriptionLatch = new CountDownLatch(1);
+
+    private final Phaser phaser = new Phaser(1);
+
     /**
      * The active subscription. Set when {@link #onSubscribe(Subscription)} is invoked.
      */
     private Subscription subscription;
-
-    private Phaser phaser = new Phaser(1);
 
     /**
      * Create a subscriber that stores at least {@code minimumBytesBuffered} in memory for retrieval.
@@ -131,6 +134,8 @@ public class ByteBufferStoringSubscriber implements Subscriber<ByteBuffer> {
 
     public TransferResult blockingTransferTo(ByteBuffer out) {
         try {
+            subscriptionLatch.await();
+
             while (true) {
                 int currentPhase = phaser.getPhase();
 
@@ -161,6 +166,7 @@ public class ByteBufferStoringSubscriber implements Subscriber<ByteBuffer> {
         storingSubscriber.onSubscribe(new DemandIgnoringSubscription(s));
         subscription = s;
         subscription.request(1);
+        subscriptionLatch.countDown();
     }
 
     @Override

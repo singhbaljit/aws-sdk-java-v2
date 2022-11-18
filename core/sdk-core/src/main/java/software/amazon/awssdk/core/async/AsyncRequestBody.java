@@ -179,12 +179,55 @@ public interface AsyncRequestBody extends SdkPublisher<ByteBuffer> {
      * <p><b>Example Usage</b>
      *
      * <pre>
+     *     S3Client s3 = ...;
+     *
+     *     InputStream streamToWrite = ...;
+     *     long streamToWriteLength = ...;
+     *
+     *     // Start the operation
+     *     BlockingInputStreamAsyncRequestBody body =
+     *         AsyncRequestBody.forBlockingInputStream(streamToWriteLength);
+     *     CompletableFuture<PutObjectResponse> responseFuture =
+     *         s3.putObject(r -> r.bucket("bucketName").key("key"), body);
+     *
+     *     // Write the input stream to the running operation
+     *     body.writeInputStream(streamToWrite);
+     *
+     *     // Wait for the service to respond.
+     *     PutObjectResponse response = responseFuture.join();
      * </pre>
      */
     static BlockingInputStreamAsyncRequestBody forBlockingInputStream(Long contentLength) {
         return new BlockingInputStreamAsyncRequestBody(contentLength);
     }
 
+    /**
+     * Creates a {@link BlockingOutputStreamAsyncRequestBody} to use for writing to the downstream service as if it's an output
+     * stream.
+     *
+     * <p><b>Example Usage</b>
+     *
+     * <pre>
+     *     S3Client s3 = ...;
+     *
+     *     byte[] dataToSend = "Hello".getBytes(StandardCharsets.UTF_8);
+     *     long lengthOfDataToSend = dataToSend.length();
+     *
+     *     // Start the operation
+     *     BlockingInputStreamAsyncRequestBody body =
+     *         AsyncRequestBody.forBlockingOutputStream(lengthOfDataToSend);
+     *     CompletableFuture<PutObjectResponse> responseFuture =
+     *         s3.putObject(r -> r.bucket("bucketName").key("key"), body);
+     *
+     *     // Write the input stream to the running operation
+     *     try (CancellableOutputStream outputStream = body.outputStream()) {
+     *         outputStream.write(dataToSend);
+     *     }
+     *
+     *     // Wait for the service to respond.
+     *     PutObjectResponse response = responseFuture.join();
+     * </pre>
+     */
     static BlockingOutputStreamAsyncRequestBody forBlockingOutputStream(Long contentLength) {
         return new BlockingOutputStreamAsyncRequestBody(contentLength);
     }

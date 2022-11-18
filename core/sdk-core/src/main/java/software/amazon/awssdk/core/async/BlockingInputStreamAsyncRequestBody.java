@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.reactivestreams.Subscriber;
 import software.amazon.awssdk.annotations.SdkPublicApi;
 import software.amazon.awssdk.core.exception.NonRetryableException;
+import software.amazon.awssdk.core.internal.io.SdkLengthAwareInputStream;
 import software.amazon.awssdk.core.internal.util.NoopSubscription;
 import software.amazon.awssdk.utils.async.InputStreamConsumingPublisher;
 
@@ -61,6 +62,10 @@ public class BlockingInputStreamAsyncRequestBody implements AsyncRequestBody {
     public long writeInputStream(InputStream inputStream) {
         try {
             waitForSubscriptionIfNeeded();
+            if (contentLength != null) {
+                return delegate.doBlockingWrite(new SdkLengthAwareInputStream(inputStream, contentLength));
+            }
+
             return delegate.doBlockingWrite(inputStream);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

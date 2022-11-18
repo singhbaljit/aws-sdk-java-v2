@@ -20,6 +20,7 @@ import static software.amazon.awssdk.utils.CompletableFutureUtils.joinInterrupti
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.reactivestreams.Publisher;
@@ -83,7 +84,10 @@ public class OutputStreamPublisher extends CancellableOutputStream implements Pu
     public void close() {
         if (done.compareAndSet(false, true)) {
             flush();
-            joinInterruptibly(delegate.complete());
+
+            // We ignore cancel failure on completion, because as long as our onNext calls have succeeded, the
+            // subscriber got everything we wanted to send.
+            joinInterruptiblyIgnoringCancellation(delegate.complete());
         }
     }
 
@@ -95,5 +99,13 @@ public class OutputStreamPublisher extends CancellableOutputStream implements Pu
     public void subscribe(Subscriber<? super ByteBuffer> s) {
         delegate.subscribe(s);
         subscribedLatch.countDown();
+    }
+
+    private void joinInterruptiblyIgnoringCancellation(CompletableFuture<Void> complete) {
+        try {
+            joinInterruptibly(complete);
+        } catch (CancellationException e) {
+            // Ignore
+        }
     }
 }
