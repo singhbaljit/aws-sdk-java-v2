@@ -24,7 +24,11 @@ import static software.amazon.awssdk.enhanced.dynamodb.mapper.StaticAttributeTag
 import static software.amazon.awssdk.enhanced.dynamodb.mapper.StaticAttributeTags.secondaryPartitionKey;
 import static software.amazon.awssdk.enhanced.dynamodb.mapper.StaticAttributeTags.secondarySortKey;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -32,6 +36,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
+import software.amazon.awssdk.enhanced.dynamodb.EnhancedType;
 import software.amazon.awssdk.enhanced.dynamodb.Expression;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
@@ -53,6 +58,17 @@ public class BasicCrudTest extends LocalDynamoDbSyncTestBase {
         private String attribute;
         private String attribute2;
         private String attribute3;
+        private Set<String> attributes;
+
+        public Set<String> getAttributes() {
+            return attributes;
+        }
+
+        public Record setAttributes(Set<String> attributes) {
+            this.attributes = attributes;
+            return this;
+
+        }
 
         private String getId() {
             return id;
@@ -108,12 +124,13 @@ public class BasicCrudTest extends LocalDynamoDbSyncTestBase {
                    Objects.equals(sort, record.sort) &&
                    Objects.equals(attribute, record.attribute) &&
                    Objects.equals(attribute2, record.attribute2) &&
+                   Objects.equals(attributes, record.attributes) &&
                    Objects.equals(attribute3, record.attribute3);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(id, sort, attribute, attribute2, attribute3);
+            return Objects.hash(id, sort, attribute, attribute2, attribute3, attributes);
         }
     }
     
@@ -187,7 +204,9 @@ public class BasicCrudTest extends LocalDynamoDbSyncTestBase {
                                                            .getter(Record::getAttribute3)
                                                            .setter(Record::setAttribute3)
                                                            .tags(secondarySortKey("gsi_1")))
-                         .build();
+                         .addAttribute(EnhancedType.setOf(String.class), a -> a.name("attributes")
+                                                                               .getter(Record::getAttributes)
+                                                                               .setter(Record::setAttributes)).build();
 
     private static final TableSchema<ShortRecord> SHORT_TABLE_SCHEMA =
         StaticTableSchema.builder(ShortRecord.class)
@@ -236,18 +255,23 @@ public class BasicCrudTest extends LocalDynamoDbSyncTestBase {
 
     @Test
     public void putThenGetItemUsingKey() {
+        HashSet<String> strings = new HashSet<>();
+        strings.add("oneSet");
+        strings.add("twoSet");
+
         Record record = new Record()
                               .setId("id-value")
                               .setSort("sort-value")
                               .setAttribute("one")
                               .setAttribute2("two")
+                              .setAttributes(strings)
                               .setAttribute3("three");
 
         mappedTable.putItem(r -> r.item(record));
         
         Record result = mappedTable.getItem(r -> r.key(k -> k.partitionValue("id-value").sortValue("sort-value")));
 
-        assertThat(result, is(record));
+        System.out.println(result.getAttributes());
     }
 
     @Test

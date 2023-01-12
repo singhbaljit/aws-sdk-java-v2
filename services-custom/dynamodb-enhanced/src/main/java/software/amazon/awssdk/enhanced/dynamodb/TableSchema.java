@@ -21,12 +21,15 @@ import java.util.Map;
 import software.amazon.awssdk.annotations.SdkPublicApi;
 import software.amazon.awssdk.annotations.ThreadSafe;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.BeanTableSchema;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.DocumentTableSchema;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.ImmutableTableSchema;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.StaticImmutableTableSchema;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.StaticTableMetadata;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.StaticTableSchema;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbImmutable;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPreserveEmptyObject;
+import software.amazon.awssdk.enhanced.dynamodb.model.DefaultEnhancedDocument;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 /**
@@ -81,6 +84,11 @@ public interface TableSchema<T> {
      */
     static <T> BeanTableSchema<T> fromBean(Class<T> beanClass) {
         return BeanTableSchema.create(beanClass);
+    }
+
+
+    static DocumentTableSchema.Builder fromDocumentSchemaBuilder() {
+        return DocumentTableSchema.builder();
     }
 
     /**
