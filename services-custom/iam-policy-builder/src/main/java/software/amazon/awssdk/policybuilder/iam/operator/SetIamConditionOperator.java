@@ -13,23 +13,8 @@
  * permissions and limitations under the License.
  */
 
-package software.amazon.awssdk.policybuilder.iam.internal;
+package software.amazon.awssdk.policybuilder.iam.operator;
 
-import software.amazon.awssdk.policybuilder.iam.JsonConvertible;
-
-public abstract class DefaultJsonConvertible implements JsonConvertible {
-    @Override
-    public final String toJson() {
-        StringBuilder builder = new StringBuilder();
-        appendJson(builder);
-        return builder.toString();
-    }
-
-    @Override
-    public abstract void appendJson(StringBuilder stringBuilder);
-
-    @Override
-    public String toString() {
-        return toJson();
-    }
+public interface SetIamConditionOperator {
+    SetIfExistsIamConditionOperator ifExists();
 }

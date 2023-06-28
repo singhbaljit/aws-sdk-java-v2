@@ -15,7 +15,14 @@
 
 package software.amazon.awssdk.policybuilder.iam;
 
-public interface IamAction extends JsonConvertible {
-    public interface Builder {
+import software.amazon.awssdk.policybuilder.iam.internal.DefaultIamAction;
+
+public interface IamAction {
+    IamAction ALL = create("*");
+
+    String value();
+
+    static IamAction create(String value) {
+        return new DefaultIamAction(value);
     }
 }

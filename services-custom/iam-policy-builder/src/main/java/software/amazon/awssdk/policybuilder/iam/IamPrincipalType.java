@@ -17,7 +17,7 @@ package software.amazon.awssdk.policybuilder.iam;
 
 import software.amazon.awssdk.policybuilder.iam.internal.DefaultIamPrincipalType;
 
-public interface IamPrincipalType extends JsonConvertible {
+public interface IamPrincipalType {
     IamPrincipalType AWS = create("AWS");
     IamPrincipalType FEDERATED = create("Federated");
     IamPrincipalType SERVICE = create("Service");

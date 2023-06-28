@@ -15,7 +15,7 @@
 
 package software.amazon.awssdk.policybuilder.iam;
 
-public interface IamCondition extends JsonConvertible {
+public interface IamCondition {
     public interface Builder {
     }
 }

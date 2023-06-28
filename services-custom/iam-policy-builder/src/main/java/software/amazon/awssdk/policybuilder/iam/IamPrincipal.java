@@ -21,7 +21,7 @@ import java.util.List;
 import software.amazon.awssdk.utils.builder.CopyableBuilder;
 import software.amazon.awssdk.utils.builder.ToCopyableBuilder;
 
-public interface IamPrincipal extends JsonConvertible, ToCopyableBuilder<IamPrincipal.Builder, IamPrincipal> {
+public interface IamPrincipal extends ToCopyableBuilder<IamPrincipal.Builder, IamPrincipal> {
     IamPrincipal ALL = create(AWS, "*");
 
     static IamPrincipal create(IamPrincipalType principalType,

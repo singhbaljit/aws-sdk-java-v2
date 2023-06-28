@@ -17,7 +17,7 @@ package software.amazon.awssdk.policybuilder.iam.internal;
 
 import software.amazon.awssdk.policybuilder.iam.IamEffect;
 
-public class DefaultIamEffect extends DefaultJsonConvertible implements IamEffect {
+public class DefaultIamEffect implements IamEffect {
     private final String value;
 
     public DefaultIamEffect(String value) {
@@ -27,12 +27,5 @@ public class DefaultIamEffect extends DefaultJsonConvertible implements IamEffec
     @Override
     public String value() {
         return value;
-    }
-
-    @Override
-    public void appendJson(StringBuilder stringBuilder) {
-        stringBuilder.append('"')
-                     .append(value)
-                     .append('"');
     }
 }

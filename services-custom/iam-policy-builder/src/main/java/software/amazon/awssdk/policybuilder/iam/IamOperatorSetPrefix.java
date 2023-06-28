@@ -15,10 +15,12 @@
 
 package software.amazon.awssdk.policybuilder.iam;
 
-public interface JsonConvertible {
-    String toJson();
+import software.amazon.awssdk.policybuilder.iam.operator.StandardIamConditionOperator;
 
-    default void appendJson(StringBuilder stringBuilder) {
-        stringBuilder.append(toJson());
+public interface IamOperatorSetPrefix {
+    static IamOperatorSetPrefix create(String value) {
+        return new DefaultIamOperatorSetPrefix(value);
     }
+
+    StandardIamConditionOperator satisfying(StandardIamConditionOperator operator);
 }

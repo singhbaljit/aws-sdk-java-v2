@@ -21,7 +21,7 @@ import java.util.function.Consumer;
 import software.amazon.awssdk.utils.builder.CopyableBuilder;
 import software.amazon.awssdk.utils.builder.ToCopyableBuilder;
 
-public interface IamStatement extends JsonConvertible, ToCopyableBuilder<IamStatement.Builder, IamStatement> {
+public interface IamStatement extends ToCopyableBuilder<IamStatement.Builder, IamStatement> {
     static IamStatement fromJson(String json) {
         return null;
     }
@@ -63,7 +63,7 @@ public interface IamStatement extends JsonConvertible, ToCopyableBuilder<IamStat
         Builder conditions(IamCondition... conditions);
         Builder addCondition(IamCondition condition);
         Builder addCondition(Consumer<IamCondition.Builder> condition);
-        Builder addCondition(IamConditionType operator, String key, String... values);
+        Builder addCondition(IamConditionOperator operator, String key, String... values);
 
         Builder putAdditionalJsonField(String key, String json);
 

@@ -13,7 +13,7 @@
  * permissions and limitations under the License.
  */
 
-package software.amazon.awssdk.policybuilder.iam;
+package software.amazon.awssdk.policybuilder.iam.operator;
 
-public interface IamConditionType extends JsonConvertible {
+public interface SetIfExistsIamConditionOperator {
 }

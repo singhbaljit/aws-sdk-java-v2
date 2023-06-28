@@ -20,7 +20,7 @@ import java.util.function.Consumer;
 import software.amazon.awssdk.utils.builder.CopyableBuilder;
 import software.amazon.awssdk.utils.builder.ToCopyableBuilder;
 
-public interface IamPolicy extends JsonConvertible, ToCopyableBuilder<IamPolicy.Builder, IamPolicy> {
+public interface IamPolicy extends ToCopyableBuilder<IamPolicy.Builder, IamPolicy> {
     static IamPolicy fromJson(String json) {
         return null;
     }

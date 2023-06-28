@@ -23,7 +23,7 @@ import software.amazon.awssdk.policybuilder.iam.IamPrincipal;
 import software.amazon.awssdk.policybuilder.iam.IamPrincipalType;
 import software.amazon.awssdk.utils.Validate;
 
-public class DefaultIamPrincipal extends DefaultJsonConvertible implements IamPrincipal {
+public class DefaultIamPrincipal implements IamPrincipal {
     private final IamPrincipalType type;
     private final List<String> ids;
     private final boolean notPrincipal;
@@ -52,12 +52,6 @@ public class DefaultIamPrincipal extends DefaultJsonConvertible implements IamPr
     @Override
     public Builder toBuilder() {
         return new Builder(this);
-    }
-
-    @Override
-    public void appendJson(StringBuilder stringBuilder) {
-        stringBuilder.append("{");
-        stringBuilder.append()
     }
 
     public class Builder implements IamPrincipal.Builder {
@@ -92,6 +86,7 @@ public class DefaultIamPrincipal extends DefaultJsonConvertible implements IamPr
         @Override
         public IamPrincipal.Builder addId(String ids) {
             this.ids.add(ids);
+            return this;
         }
 
         @Override

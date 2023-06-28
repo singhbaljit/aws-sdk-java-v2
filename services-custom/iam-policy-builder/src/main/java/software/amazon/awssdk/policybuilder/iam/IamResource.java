@@ -15,7 +15,14 @@
 
 package software.amazon.awssdk.policybuilder.iam;
 
-public interface IamResource extends JsonConvertible {
-    public interface Builder {
+import software.amazon.awssdk.policybuilder.iam.internal.DefaultIamResource;
+
+public interface IamResource {
+    IamResource ALL = create("*");
+
+    String value();
+
+    static IamResource create(String value) {
+        return new DefaultIamResource(value);
     }
 }

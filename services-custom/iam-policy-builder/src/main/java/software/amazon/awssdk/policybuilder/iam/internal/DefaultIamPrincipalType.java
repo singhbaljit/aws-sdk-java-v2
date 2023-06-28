@@ -17,7 +17,7 @@ package software.amazon.awssdk.policybuilder.iam.internal;
 
 import software.amazon.awssdk.policybuilder.iam.IamPrincipalType;
 
-public class DefaultIamPrincipalType extends DefaultJsonConvertible implements IamPrincipalType {
+public class DefaultIamPrincipalType implements IamPrincipalType {
     private final String value;
 
     public DefaultIamPrincipalType(String value) {
@@ -27,12 +27,5 @@ public class DefaultIamPrincipalType extends DefaultJsonConvertible implements I
     @Override
     public String value() {
         return value;
-    }
-
-    @Override
-    public void appendJson(StringBuilder stringBuilder) {
-        stringBuilder.append('"')
-                     .append(value)
-                     .append('"');
     }
 }

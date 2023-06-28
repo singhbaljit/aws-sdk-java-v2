@@ -13,17 +13,9 @@
  * permissions and limitations under the License.
  */
 
-package software.amazon.awssdk.policybuilder.iam;
+package software.amazon.awssdk.policybuilder.iam.operator;
 
-import software.amazon.awssdk.policybuilder.iam.internal.DefaultIamEffect;
+import software.amazon.awssdk.policybuilder.iam.IamConditionOperator;
 
-public interface IamEffect {
-    IamEffect ALLOW = create("Allow");
-    IamEffect DENY = create("Deny");
-
-    String value();
-
-    static IamEffect create(String value) {
-        return new DefaultIamEffect(value);
-    }
+public interface NullIamConditionOperator extends IamConditionOperator {
 }

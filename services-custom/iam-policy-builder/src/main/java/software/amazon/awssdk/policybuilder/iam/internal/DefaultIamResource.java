@@ -13,17 +13,19 @@
  * permissions and limitations under the License.
  */
 
-package software.amazon.awssdk.policybuilder.iam;
+package software.amazon.awssdk.policybuilder.iam.internal;
 
-import software.amazon.awssdk.policybuilder.iam.internal.DefaultIamEffect;
+import software.amazon.awssdk.policybuilder.iam.IamResource;
 
-public interface IamEffect {
-    IamEffect ALLOW = create("Allow");
-    IamEffect DENY = create("Deny");
+public class DefaultIamResource implements IamResource {
+    private final String value;
 
-    String value();
+    public DefaultIamResource(String value) {
+        this.value = value;
+    }
 
-    static IamEffect create(String value) {
-        return new DefaultIamEffect(value);
+    @Override
+    public String value() {
+        return value;
     }
 }
