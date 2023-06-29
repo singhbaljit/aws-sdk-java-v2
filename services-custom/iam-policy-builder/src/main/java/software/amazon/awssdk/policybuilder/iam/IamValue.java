@@ -15,12 +15,6 @@
 
 package software.amazon.awssdk.policybuilder.iam;
 
-import software.amazon.awssdk.policybuilder.iam.operator.StandardIamConditionOperator;
-
-public interface IamOperatorSetPrefix {
-    static IamOperatorSetPrefix create(String value) {
-        return new DefaultIamOperatorSetPrefix(value);
-    }
-
-    StandardIamConditionOperator satisfying(StandardIamConditionOperator operator);
+public interface IamValue {
+    String value();
 }

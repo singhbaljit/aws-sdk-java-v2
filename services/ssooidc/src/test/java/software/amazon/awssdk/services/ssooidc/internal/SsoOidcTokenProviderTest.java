@@ -459,8 +459,14 @@ public class SsoOidcTokenProviderTest {
 
 
 
-        
-        return builder.accessToken(tokenGreaterThanStaleButLessThanPrefetch).expiresIn(i).build();
+
+
+        return builder
+
+
+
+
+            .accessToken(tokenGreaterThanStaleButLessThanPrefetch).expiresIn(i).build();
     }
 
     @Test

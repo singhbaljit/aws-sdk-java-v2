@@ -19,13 +19,55 @@ import software.amazon.awssdk.policybuilder.iam.IamAction;
 
 public class DefaultIamAction implements IamAction {
     private final String value;
+    private final boolean notAction;
 
-    public DefaultIamAction(String value) {
-        this.value = value;
+    public DefaultIamAction(Builder builder) {
+        this.value = builder.value;
+        this.notAction = builder.notAction;
     }
 
     @Override
     public String value() {
         return value;
+    }
+
+    @Override
+    public boolean notAction() {
+        return notAction;
+    }
+
+    @Override
+    public IamAction.Builder toBuilder() {
+        return new Builder(this);
+    }
+
+    public static class Builder implements IamAction.Builder {
+        private String value;
+        private boolean notAction = false;
+
+        public Builder() {
+        }
+
+        public Builder(DefaultIamAction action) {
+            this.value = action.value;
+            this.notAction = action.notAction;
+        }
+
+        @Override
+        public IamAction.Builder value(String value) {
+            this.value = value;
+            return this;
+        }
+
+        @Override
+        public IamAction.Builder notAction() {
+            this.notAction = true;
+            return this;
+        }
+
+        @Override
+        public IamAction build() {
+            return new DefaultIamAction(this);
+        }
     }
 }

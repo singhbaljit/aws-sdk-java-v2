@@ -15,22 +15,18 @@
 
 package software.amazon.awssdk.policybuilder.iam.internal;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import software.amazon.awssdk.policybuilder.iam.IamPrincipal;
 import software.amazon.awssdk.policybuilder.iam.IamPrincipalType;
 import software.amazon.awssdk.utils.Validate;
 
 public class DefaultIamPrincipal implements IamPrincipal {
     private final IamPrincipalType type;
-    private final List<String> ids;
+    private final String id;
     private final boolean notPrincipal;
 
     private DefaultIamPrincipal(Builder builder) {
         this.type = Validate.paramNotNull(builder.type, "type");
-        this.ids = new ArrayList<>(Validate.notEmpty(builder.ids, "Principal IDs must not be empty"));
+        this.id = Validate.paramNotNull(builder.id, "id");
         this.notPrincipal = builder.notPrincipal;
     }
 
@@ -40,8 +36,8 @@ public class DefaultIamPrincipal implements IamPrincipal {
     }
 
     @Override
-    public List<String> ids() {
-        return Collections.unmodifiableList(ids);
+    public String id() {
+        return id;
     }
 
     @Override
@@ -56,14 +52,14 @@ public class DefaultIamPrincipal implements IamPrincipal {
 
     public static class Builder implements IamPrincipal.Builder {
         private IamPrincipalType type;
-        private List<String> ids = new ArrayList<>();
+        private String id;
         private boolean notPrincipal = false;
 
         public Builder() {}
 
         public Builder(DefaultIamPrincipal principal) {
             this.type = principal.type;
-            this.ids.addAll(principal.ids);
+            this.id = principal.id;
             this.notPrincipal = principal.notPrincipal;
         }
 
@@ -74,20 +70,14 @@ public class DefaultIamPrincipal implements IamPrincipal {
         }
 
         @Override
-        public IamPrincipal.Builder ids(List<String> ids) {
-            this.ids.clear();
-            this.ids.addAll(ids);
+        public IamPrincipal.Builder type(String type) {
+            this.type = IamPrincipalType.create(type);
             return this;
         }
 
         @Override
-        public IamPrincipal.Builder ids(String... ids) {
-            return ids(Arrays.asList(ids));
-        }
-
-        @Override
-        public IamPrincipal.Builder addId(String ids) {
-            this.ids.add(ids);
+        public IamPrincipal.Builder id(String id) {
+            this.id = id;
             return this;
         }
 

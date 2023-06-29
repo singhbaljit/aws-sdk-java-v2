@@ -17,7 +17,6 @@ package software.amazon.awssdk.policybuilder.iam;
 
 import static software.amazon.awssdk.policybuilder.iam.IamPrincipalType.AWS;
 
-import java.util.List;
 import software.amazon.awssdk.policybuilder.iam.internal.DefaultIamPrincipal;
 import software.amazon.awssdk.utils.builder.CopyableBuilder;
 import software.amazon.awssdk.utils.builder.ToCopyableBuilder;
@@ -25,11 +24,12 @@ import software.amazon.awssdk.utils.builder.ToCopyableBuilder;
 public interface IamPrincipal extends ToCopyableBuilder<IamPrincipal.Builder, IamPrincipal> {
     IamPrincipal ALL = create(AWS, "*");
 
-    static IamPrincipal create(IamPrincipalType principalType,
-                               String... principalIds) {
-        return builder().type(principalType)
-                        .ids(principalIds)
-                        .build();
+    static IamPrincipal create(IamPrincipalType principalType, String principalId) {
+        return builder().type(principalType).id(principalId).build();
+    }
+
+    static IamPrincipal create(String principalType, String principalId) {
+        return builder().type(principalType).id(principalId).build();
     }
 
     static Builder builder() {
@@ -37,14 +37,13 @@ public interface IamPrincipal extends ToCopyableBuilder<IamPrincipal.Builder, Ia
     }
 
     IamPrincipalType type();
-    List<String> ids();
+    String id();
     boolean notPrincipal();
 
     interface Builder extends CopyableBuilder<Builder, IamPrincipal> {
         Builder type(IamPrincipalType type);
-        Builder ids(List<String> ids);
-        Builder ids(String... ids);
-        Builder addId(String ids);
+        Builder type(String type);
+        Builder id(String id);
 
         Builder notPrincipal();
 

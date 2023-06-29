@@ -17,7 +17,7 @@ package software.amazon.awssdk.policybuilder.iam;
 
 import software.amazon.awssdk.policybuilder.iam.internal.DefaultIamEffect;
 
-public interface IamEffect {
+public interface IamEffect extends IamValue {
     IamEffect ALLOW = create("Allow");
     IamEffect DENY = create("Deny");
 

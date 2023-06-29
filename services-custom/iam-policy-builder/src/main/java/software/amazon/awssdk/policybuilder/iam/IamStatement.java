@@ -15,19 +15,22 @@
 
 package software.amazon.awssdk.policybuilder.iam;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import software.amazon.awssdk.policybuilder.iam.internal.DefaultIamStatement;
 import software.amazon.awssdk.utils.builder.CopyableBuilder;
 import software.amazon.awssdk.utils.builder.ToCopyableBuilder;
 
 public interface IamStatement extends ToCopyableBuilder<IamStatement.Builder, IamStatement> {
     static IamStatement fromJson(String json) {
+        // TODO
         return null;
     }
 
     static Builder builder() {
-        return null;
+        return new DefaultIamStatement.Builder();
     }
 
     String sid();
@@ -43,27 +46,31 @@ public interface IamStatement extends ToCopyableBuilder<IamStatement.Builder, Ia
         Builder sid(String sid);
         Builder effect(IamEffect effect);
 
-        Builder principals(List<IamPrincipal> principals);
+        Builder principals(Collection<IamPrincipal> principals);
         Builder principals(IamPrincipal... principals);
         Builder addPrincipal(IamPrincipal principal);
         Builder addPrincipal(Consumer<IamPrincipal.Builder> principal);
-        Builder addPrincipal(IamPrincipalType iamPrincipalType, String... principals);
+        Builder addPrincipals(IamPrincipalType iamPrincipalType, String... principals);
+        Builder addPrincipals(String iamPrincipalType, String... principals);
 
-        Builder actions(List<IamAction> actions);
+        Builder actions(Collection<IamAction> actions);
         Builder actions(IamAction... actions);
         Builder addAction(IamAction action);
         Builder addAction(String action);
 
-        Builder resources(List<IamResource> resources);
+        Builder resources(Collection<IamResource> resources);
         Builder resources(IamResource... resources);
         Builder addResource(IamResource resource);
         Builder addResource(String resource);
 
-        Builder conditions(List<IamCondition> conditions);
+        Builder conditions(Collection<IamCondition> conditions);
         Builder conditions(IamCondition... conditions);
         Builder addCondition(IamCondition condition);
         Builder addCondition(Consumer<IamCondition.Builder> condition);
-        Builder addCondition(IamConditionOperator operator, String key, String... values);
+        Builder addCondition(IamConditionOperator operator, IamConditionKey key, Collection<String> values);
+        Builder addCondition(IamConditionOperator operator, IamConditionKey key, String... values);
+        Builder addCondition(String operator, String key, Collection<String> values);
+        Builder addCondition(String operator, String key, String... values);
 
         Builder putAdditionalJsonField(String key, String json);
 

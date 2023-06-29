@@ -25,12 +25,12 @@ public class DefaultIamConditionOperator implements IamConditionOperator {
     }
 
     @Override
-    public IamConditionOperator prepend(String prefix) {
+    public IamConditionOperator addPrefix(String prefix) {
         return IamConditionOperator.create(prefix + value);
     }
 
     @Override
-    public IamConditionOperator append(String suffix) {
+    public IamConditionOperator addSuffix(String suffix) {
         return IamConditionOperator.create(value + suffix);
     }
 

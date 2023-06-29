@@ -17,11 +17,11 @@ package software.amazon.awssdk.policybuilder.iam;
 
 import software.amazon.awssdk.policybuilder.iam.internal.DefaultIamPrincipalType;
 
-public interface IamPrincipalType {
+public interface IamPrincipalType extends IamValue {
     IamPrincipalType AWS = create("AWS");
     IamPrincipalType FEDERATED = create("Federated");
     IamPrincipalType SERVICE = create("Service");
-    IamPrincipalType CANONICAL_USER = create("CANONICAL_USER");
+    IamPrincipalType CANONICAL_USER = create("CanonicalUser");
 
     String value();
 

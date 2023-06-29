@@ -17,7 +17,7 @@ package software.amazon.awssdk.policybuilder.iam;
 
 import software.amazon.awssdk.policybuilder.iam.internal.DefaultIamConditionOperator;
 
-public interface IamConditionOperator {
+public interface IamConditionOperator extends IamValue {
     IamConditionOperator STRING_EQUALS = create("StringEquals");
     IamConditionOperator STRING_NOT_EQUALS = create("StringNotEquals");
     IamConditionOperator STRING_EQUALS_IGNORE_CASE = create("StringEqualsIgnoreCase");

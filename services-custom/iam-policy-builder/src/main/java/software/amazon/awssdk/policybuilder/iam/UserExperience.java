@@ -15,8 +15,6 @@
 
 package software.amazon.awssdk.policybuilder.iam;
 
-import java.util.Arrays;
-
 public class UserExperience {
     public static void main(String... args) {
         IamPolicy policy =
@@ -25,21 +23,13 @@ public class UserExperience {
                                                .sid("sid")
                                                .effect(IamEffect.ALLOW)
 
-                                               .allowAllPrincipals()
-                                               .addPrincipal(IamPrincipalType.AWS, "9999999999")
+                                               .addPrincipals(IamPrincipalType.AWS, "9999999999")
 
-                                               .blockAllPrincipals()
-                                               .addNotPrincipal(IamPrincipalType.AWS, "9999999999")
-
-                                               .allowAnyAction()
                                                .addAction("s3:*")
 
-                                               .blockAnyAction()
-                                               .addNotAction("s3:*")
 
                                                .addCondition("StringEquals", "aws:PrincipalTag/job-category", "iamuser-admin")
-                                               .addCondition("StringEquals", "aws:PrincipalTag/role", Arrays.asList("audit",
-                                                                                                                    "finance"))
+                                               .addCondition("StringEquals", "aws:PrincipalTag/role", "audit", "finance")
                                                .build())
                      .build();
     }

@@ -16,13 +16,25 @@
 package software.amazon.awssdk.policybuilder.iam;
 
 import software.amazon.awssdk.policybuilder.iam.internal.DefaultIamAction;
+import software.amazon.awssdk.utils.builder.CopyableBuilder;
+import software.amazon.awssdk.utils.builder.ToCopyableBuilder;
 
-public interface IamAction {
+public interface IamAction extends ToCopyableBuilder<IamAction.Builder, IamAction>, IamValue {
     IamAction ALL = create("*");
 
     String value();
+    boolean notAction();
 
     static IamAction create(String value) {
-        return new DefaultIamAction(value);
+        return builder().value(value).build();
+    }
+
+    static Builder builder() {
+        return new DefaultIamAction.Builder();
+    }
+
+    interface Builder extends CopyableBuilder<Builder, IamAction> {
+        Builder value(String value);
+        Builder notAction();
     }
 }

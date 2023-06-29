@@ -15,12 +15,18 @@
 
 package software.amazon.awssdk.policybuilder.iam;
 
-import software.amazon.awssdk.policybuilder.iam.internal.DefaultIamConditionKey;
+import software.amazon.awssdk.policybuilder.iam.internal.DefaultIamPolicyWriter;
+import software.amazon.awssdk.utils.builder.CopyableBuilder;
+import software.amazon.awssdk.utils.builder.ToCopyableBuilder;
 
-public interface IamConditionKey extends IamValue {
-    String value();
+public interface IamPolicyWriter extends ToCopyableBuilder<IamPolicyWriter.Builder, IamPolicyWriter> {
+    static IamPolicyWriter create() {
+        return DefaultIamPolicyWriter.create();
+    }
 
-    static IamConditionKey create(String value) {
-        return new DefaultIamConditionKey(value);
+    String write(IamPolicy policy);
+
+    interface Builder extends CopyableBuilder<Builder, IamPolicyWriter> {
+
     }
 }

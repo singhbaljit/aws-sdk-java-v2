@@ -14,27 +14,30 @@
  */
 package software.amazon.awssdk.policybuilder.iam;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import software.amazon.awssdk.policybuilder.iam.internal.DefaultIamPolicy;
 import software.amazon.awssdk.utils.builder.CopyableBuilder;
 import software.amazon.awssdk.utils.builder.ToCopyableBuilder;
 
 public interface IamPolicy extends ToCopyableBuilder<IamPolicy.Builder, IamPolicy> {
     static IamPolicy fromJson(String json) {
+        // TODO
         return null;
     }
 
-    static IamPolicy fromStatements(Iterable<IamStatement> statements) {
-        return null;
+    static IamPolicy fromStatements(Collection<IamStatement> statements) {
+        return builder().statements(statements).build();
     }
 
     static IamPolicy fromStatements(IamStatement... statements) {
-        return null;
+        return builder().statements(statements).build();
     }
 
     static Builder builder() {
-        return null;
+        return new DefaultIamPolicy.Builder();
     }
 
     String id();
@@ -42,16 +45,18 @@ public interface IamPolicy extends ToCopyableBuilder<IamPolicy.Builder, IamPolic
     List<IamStatement> statements();
     Map<String, String> additionalJsonFields();
 
+    String toJson();
+    String toJson(IamPolicyWriter writer);
+
     interface Builder extends CopyableBuilder<Builder, IamPolicy> {
         Builder id(String id);
         Builder version(String version);
 
-        Builder statements(Iterable<IamStatement> statements);
+        Builder statements(Collection<IamStatement> statements);
+        Builder statements(IamStatement... statements);
         Builder addStatement(IamStatement statement);
         Builder addStatement(Consumer<IamStatement.Builder> statement);
 
         Builder putAdditionalJsonField(String key, String json);
-
-        IamPolicy build();
     }
 }
