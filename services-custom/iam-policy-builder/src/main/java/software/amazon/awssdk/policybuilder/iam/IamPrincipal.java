@@ -18,6 +18,7 @@ package software.amazon.awssdk.policybuilder.iam;
 import static software.amazon.awssdk.policybuilder.iam.IamPrincipalType.AWS;
 
 import java.util.List;
+import software.amazon.awssdk.policybuilder.iam.internal.DefaultIamPrincipal;
 import software.amazon.awssdk.utils.builder.CopyableBuilder;
 import software.amazon.awssdk.utils.builder.ToCopyableBuilder;
 

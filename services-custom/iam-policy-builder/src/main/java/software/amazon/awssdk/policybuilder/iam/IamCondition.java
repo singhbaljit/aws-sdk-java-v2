@@ -15,7 +15,20 @@
 
 package software.amazon.awssdk.policybuilder.iam;
 
-public interface IamCondition {
-    public interface Builder {
+import software.amazon.awssdk.policybuilder.iam.internal.DefaultIamCondition;
+import software.amazon.awssdk.utils.builder.CopyableBuilder;
+import software.amazon.awssdk.utils.builder.ToCopyableBuilder;
+
+public interface IamCondition extends ToCopyableBuilder<IamCondition.Builder, IamCondition> {
+    static Builder builder() {
+        return new DefaultIamCondition.Builder();
+    }
+
+    public interface Builder extends CopyableBuilder<Builder, IamCondition> {
+        Builder operator(IamConditionOperator operator);
+        Builder operator(String operator);
+        Builder key(IamConditionKey key);
+        Builder key(String key);
+        Builder value(String value);
     }
 }

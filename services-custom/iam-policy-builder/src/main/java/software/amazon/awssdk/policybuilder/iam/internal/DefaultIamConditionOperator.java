@@ -16,18 +16,8 @@
 package software.amazon.awssdk.policybuilder.iam.internal;
 
 import software.amazon.awssdk.policybuilder.iam.IamConditionOperator;
-import software.amazon.awssdk.policybuilder.iam.operator.IfExistsIamConditionOperator;
-import software.amazon.awssdk.policybuilder.iam.operator.NullIamConditionOperator;
-import software.amazon.awssdk.policybuilder.iam.operator.SetIamConditionOperator;
-import software.amazon.awssdk.policybuilder.iam.operator.SetIfExistsIamConditionOperator;
-import software.amazon.awssdk.policybuilder.iam.operator.StandardIamConditionOperator;
 
-public class DefaultIamConditionOperator implements IamConditionOperator,
-                                                    IfExistsIamConditionOperator,
-                                                    NullIamConditionOperator,
-                                                    SetIamConditionOperator,
-                                                    SetIfExistsIamConditionOperator,
-                                                    StandardIamConditionOperator {
+public class DefaultIamConditionOperator implements IamConditionOperator {
     private final String value;
 
     public DefaultIamConditionOperator(String value) {
@@ -35,22 +25,17 @@ public class DefaultIamConditionOperator implements IamConditionOperator,
     }
 
     @Override
+    public IamConditionOperator prepend(String prefix) {
+        return IamConditionOperator.create(prefix + value);
+    }
+
+    @Override
+    public IamConditionOperator append(String suffix) {
+        return IamConditionOperator.create(value + suffix);
+    }
+
+    @Override
     public String value() {
         return value;
-    }
-
-    @Override
-    public SetIfExistsIamConditionOperator forAllValues() {
-        return null;
-    }
-
-    @Override
-    public SetIfExistsIamConditionOperator forAnyValues() {
-        return null;
-    }
-
-    @Override
-    public SetIfExistsIamConditionOperator ifExists() {
-        return null;
     }
 }

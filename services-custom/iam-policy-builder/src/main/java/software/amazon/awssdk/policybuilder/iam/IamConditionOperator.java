@@ -16,71 +16,45 @@
 package software.amazon.awssdk.policybuilder.iam;
 
 import software.amazon.awssdk.policybuilder.iam.internal.DefaultIamConditionOperator;
-import software.amazon.awssdk.policybuilder.iam.internal.DefaultStandardIamConditionOperator;
-import software.amazon.awssdk.policybuilder.iam.operator.NullIamConditionOperator;
-import software.amazon.awssdk.policybuilder.iam.operator.StandardIamConditionOperator;
 
 public interface IamConditionOperator {
-    StandardIamConditionOperator STRING_EQUALS =
-        new DefaultStandardIamConditionOperator("StringEquals");
-    StandardIamConditionOperator STRING_NOT_EQUALS =
-        new DefaultStandardIamConditionOperator("StringNotEquals");
-    StandardIamConditionOperator STRING_EQUALS_IGNORE_CASE =
-        new DefaultStandardIamConditionOperator("StringEqualsIgnoreCase");
-    StandardIamConditionOperator STRING_NOT_EQUALS_IGNORE_CASE =
-        new DefaultStandardIamConditionOperator("StringNotEqualsIgnoreCase");
-    StandardIamConditionOperator STRING_LIKE =
-        new DefaultStandardIamConditionOperator("StringLike");
-    StandardIamConditionOperator STRING_NOT_LIKE =
-        new DefaultStandardIamConditionOperator("StringNotLike");
+    IamConditionOperator STRING_EQUALS = create("StringEquals");
+    IamConditionOperator STRING_NOT_EQUALS = create("StringNotEquals");
+    IamConditionOperator STRING_EQUALS_IGNORE_CASE = create("StringEqualsIgnoreCase");
+    IamConditionOperator STRING_NOT_EQUALS_IGNORE_CASE = create("StringNotEqualsIgnoreCase");
+    IamConditionOperator STRING_LIKE = create("StringLike");
+    IamConditionOperator STRING_NOT_LIKE = create("StringNotLike");
 
-    StandardIamConditionOperator NUMERIC_EQUALS =
-        new DefaultStandardIamConditionOperator("NumericEquals");
-    StandardIamConditionOperator NUMERIC_NOT_EQUALS =
-        new DefaultStandardIamConditionOperator("NumericNotEquals");
-    StandardIamConditionOperator NUMERIC_LESS_THAN =
-        new DefaultStandardIamConditionOperator("NumericLessThan");
-    StandardIamConditionOperator NUMERIC_LESS_THAN_EQUALS =
-        new DefaultStandardIamConditionOperator("NumericLessThanEquals");
-    StandardIamConditionOperator NUMERIC_GREATER_THAN =
-        new DefaultStandardIamConditionOperator("NumericGreaterThan");
-    StandardIamConditionOperator NUMERIC_GREATER_THAN_EQUALS =
-        new DefaultStandardIamConditionOperator("NumericGreaterThanEquals");
+    IamConditionOperator NUMERIC_EQUALS = create("NumericEquals");
+    IamConditionOperator NUMERIC_NOT_EQUALS = create("NumericNotEquals");
+    IamConditionOperator NUMERIC_LESS_THAN = create("NumericLessThan");
+    IamConditionOperator NUMERIC_LESS_THAN_EQUALS = create("NumericLessThanEquals");
+    IamConditionOperator NUMERIC_GREATER_THAN = create("NumericGreaterThan");
+    IamConditionOperator NUMERIC_GREATER_THAN_EQUALS = create("NumericGreaterThanEquals");
 
-    StandardIamConditionOperator DATE_EQUALS =
-        new DefaultStandardIamConditionOperator("DateEquals");
-    StandardIamConditionOperator DATE_NOT_EQUALS =
-        new DefaultStandardIamConditionOperator("DateNotEquals");
-    StandardIamConditionOperator DATE_LESS_THAN =
-        new DefaultStandardIamConditionOperator("DateLessThan");
-    StandardIamConditionOperator DATE_LESS_THAN_EQUALS =
-        new DefaultStandardIamConditionOperator("DateLessThanEquals");
-    StandardIamConditionOperator DATE_GREATER_THAN =
-        new DefaultStandardIamConditionOperator("DateGreaterThan");
-    StandardIamConditionOperator DATE_GREATER_THAN_EQUALS =
-        new DefaultStandardIamConditionOperator("DateGreaterThanEquals");
+    IamConditionOperator DATE_EQUALS = create("DateEquals");
+    IamConditionOperator DATE_NOT_EQUALS = create("DateNotEquals");
+    IamConditionOperator DATE_LESS_THAN = create("DateLessThan");
+    IamConditionOperator DATE_LESS_THAN_EQUALS = create("DateLessThanEquals");
+    IamConditionOperator DATE_GREATER_THAN = create("DateGreaterThan");
+    IamConditionOperator DATE_GREATER_THAN_EQUALS = create("DateGreaterThanEquals");
 
-    StandardIamConditionOperator BOOL =
-        new DefaultStandardIamConditionOperator("Bool");
+    IamConditionOperator BOOL = create("Bool");
 
-    StandardIamConditionOperator BINARY_EQUALS =
-        new DefaultStandardIamConditionOperator("BinaryEquals");
+    IamConditionOperator BINARY_EQUALS = create("BinaryEquals");
 
-    StandardIamConditionOperator IP_ADDRESS =
-        new DefaultStandardIamConditionOperator("IpAddress");
-    StandardIamConditionOperator NOT_IP_ADDRESS =
-        new DefaultStandardIamConditionOperator("NotIpAddress");
+    IamConditionOperator IP_ADDRESS = create("IpAddress");
+    IamConditionOperator NOT_IP_ADDRESS = create("NotIpAddress");
 
-    StandardIamConditionOperator ARN_EQUALS =
-        new DefaultStandardIamConditionOperator("ArnEquals");
-    StandardIamConditionOperator ARN_NOT_EQUALS =
-        new DefaultStandardIamConditionOperator("ArnNotEquals");
-    StandardIamConditionOperator ARN_LIKE =
-        new DefaultStandardIamConditionOperator("ArnLike");
-    StandardIamConditionOperator ARN_NOT_LIKE =
-        new DefaultStandardIamConditionOperator("ArnNotLike");
+    IamConditionOperator ARN_EQUALS = create("ArnEquals");
+    IamConditionOperator ARN_NOT_EQUALS = create("ArnNotEquals");
+    IamConditionOperator ARN_LIKE = create("ArnLike");
+    IamConditionOperator ARN_NOT_LIKE = create("ArnNotLike");
 
-    NullIamConditionOperator NULL = new DefaultNullIamConditionOperator();
+    IamConditionOperator NULL = create("Null");
+
+    IamConditionOperator addPrefix(String prefix);
+    IamConditionOperator addSuffix(String suffix);
 
     String value();
 

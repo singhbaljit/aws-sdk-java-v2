@@ -54,10 +54,12 @@ public class DefaultIamPrincipal implements IamPrincipal {
         return new Builder(this);
     }
 
-    public class Builder implements IamPrincipal.Builder {
+    public static class Builder implements IamPrincipal.Builder {
         private IamPrincipalType type;
         private List<String> ids = new ArrayList<>();
         private boolean notPrincipal = false;
+
+        public Builder() {}
 
         public Builder(DefaultIamPrincipal principal) {
             this.type = principal.type;

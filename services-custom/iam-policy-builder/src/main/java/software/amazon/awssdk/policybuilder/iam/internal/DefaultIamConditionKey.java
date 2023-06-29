@@ -13,8 +13,19 @@
  * permissions and limitations under the License.
  */
 
-package software.amazon.awssdk.policybuilder.iam.operator;
+package software.amazon.awssdk.policybuilder.iam.internal;
 
-public interface SetIamConditionOperator {
-    SetIfExistsIamConditionOperator ifExists();
+import software.amazon.awssdk.policybuilder.iam.IamConditionKey;
+
+public class DefaultIamConditionKey implements IamConditionKey {
+    private final String value;
+
+    public DefaultIamConditionKey(String value) {
+        this.value = value;
+    }
+
+    @Override
+    public String value() {
+        return value;
+    }
 }
