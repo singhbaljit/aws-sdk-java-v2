@@ -22,7 +22,7 @@ import software.amazon.awssdk.policybuilder.iam.internal.DefaultIamPolicy;
 import software.amazon.awssdk.utils.builder.CopyableBuilder;
 import software.amazon.awssdk.utils.builder.ToCopyableBuilder;
 
-public interface IamPolicy extends ToCopyableBuilder<IamPolicy.Builder, IamPolicy> {
+public interface IamPolicy extends ToCopyableBuilder<IamPolicy.Builder, IamPolicy>, IamStructure {
     static IamPolicy fromJson(String json) {
         // TODO
         return null;
@@ -43,12 +43,12 @@ public interface IamPolicy extends ToCopyableBuilder<IamPolicy.Builder, IamPolic
     String id();
     String version();
     List<IamStatement> statements();
-    Map<String, String> additionalJsonFields();
+    Map<String, String> additionalJsonFieldsUnsafe();
 
     String toJson();
     String toJson(IamPolicyWriter writer);
 
-    interface Builder extends CopyableBuilder<Builder, IamPolicy> {
+    interface Builder extends CopyableBuilder<Builder, IamPolicy>, IamStructure.Builder<Builder> {
         Builder id(String id);
         Builder version(String version);
 
@@ -56,7 +56,5 @@ public interface IamPolicy extends ToCopyableBuilder<IamPolicy.Builder, IamPolic
         Builder statements(IamStatement... statements);
         Builder addStatement(IamStatement statement);
         Builder addStatement(Consumer<IamStatement.Builder> statement);
-
-        Builder putAdditionalJsonField(String key, String json);
     }
 }

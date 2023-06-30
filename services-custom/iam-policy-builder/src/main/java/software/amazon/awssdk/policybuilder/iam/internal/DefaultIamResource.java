@@ -21,26 +21,14 @@ import software.amazon.awssdk.utils.Validate;
 
 public class DefaultIamResource implements IamResource {
     private final String value;
-    private final boolean notResource;
 
-    public DefaultIamResource(Builder builder) {
-        this.value = Validate.paramNotNull(builder.value, "resourceValue");
-        this.notResource = builder.notResource;
+    public DefaultIamResource(String value) {
+        this.value = Validate.paramNotNull(value, "resourceValue");
     }
 
     @Override
     public String value() {
         return value;
-    }
-
-    @Override
-    public boolean notResource() {
-        return notResource;
-    }
-
-    @Override
-    public IamResource.Builder toBuilder() {
-        return new Builder(this);
     }
 
     @Override
@@ -54,54 +42,18 @@ public class DefaultIamResource implements IamResource {
 
         DefaultIamResource that = (DefaultIamResource) o;
 
-        if (notResource != that.notResource) {
-            return false;
-        }
         return value.equals(that.value);
     }
 
     @Override
     public int hashCode() {
-        int result = value.hashCode();
-        result = 31 * result + (notResource ? 1 : 0);
-        return result;
+        return value.hashCode();
     }
 
     @Override
     public String toString() {
         return ToString.builder("IamResource")
                        .add("value", value)
-                       .add("notResource", notResource)
                        .build();
-    }
-
-    public static class Builder implements IamResource.Builder {
-        private String value;
-        private boolean notResource = false;
-
-        public Builder() {
-        }
-
-        public Builder(DefaultIamResource resource) {
-            this.value = resource.value;
-            this.notResource = resource.notResource;
-        }
-
-        @Override
-        public IamResource.Builder value(String value) {
-            this.value = value;
-            return this;
-        }
-
-        @Override
-        public IamResource.Builder notResource() {
-            this.notResource = true;
-            return this;
-        }
-
-        @Override
-        public IamResource build() {
-            return new DefaultIamResource(this);
-        }
     }
 }

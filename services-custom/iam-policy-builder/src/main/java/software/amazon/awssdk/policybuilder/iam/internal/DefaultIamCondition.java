@@ -15,6 +15,9 @@
 
 package software.amazon.awssdk.policybuilder.iam.internal;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import software.amazon.awssdk.policybuilder.iam.IamCondition;
 import software.amazon.awssdk.policybuilder.iam.IamConditionKey;
 import software.amazon.awssdk.policybuilder.iam.IamConditionOperator;
@@ -93,7 +96,7 @@ public class DefaultIamCondition implements IamCondition {
         private IamConditionOperator operator;
         private IamConditionKey key;
         private String value;
-        
+
         public Builder() {}
 
         public Builder(DefaultIamCondition condition) {

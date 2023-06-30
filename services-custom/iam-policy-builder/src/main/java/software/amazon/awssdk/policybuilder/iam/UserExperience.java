@@ -23,17 +23,23 @@ public class UserExperience {
                                                .sid("sid")
                                                .effect(IamEffect.ALLOW)
 
-                                               .addPrincipals(IamPrincipalType.AWS, "9999999999")
+                                               .addPrincipal(IamPrincipal.ALL)
 
                                                .addAction(IamAction.ALL)
                                                .addResource(IamResource.ALL)
 
-                                               .addConditions("StringEquals", "aws:PrincipalTag/job-category", "iamuser-admin")
+                                               .addCondition("StringEquals", "aws:PrincipalTag/job-category", "iamuser-admin")
                                                .addConditions("StringEquals", "aws:PrincipalTag/role", "audit", "finance")
                                                .build())
+                     // .addStatement(s -> s.effect(IamEffect.DENY)
+                     //                     .addPrincipal(IamPrincipal.ALL)
+                     //                     .putJsonFieldUnsafe("AnotherNewKey", "[{\"hello\": 2}]")
+                     //                     .putJsonFieldUnsafe("AnotherNewKey2", "[{\"goodbye\": 3}]"))
+                     .putJsonFieldUnsafe("NewKey", "1")
                      .build();
 
         System.out.println(policy);
         System.out.println(policy.toJson());
+        System.out.println(IamPolicyWriter.builder().prettyPrint(true).build().write(policy));
     }
 }

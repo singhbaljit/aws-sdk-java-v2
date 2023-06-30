@@ -15,14 +15,12 @@
 
 package software.amazon.awssdk.policybuilder.iam;
 
-import static software.amazon.awssdk.policybuilder.iam.IamPrincipalType.AWS;
-
 import software.amazon.awssdk.policybuilder.iam.internal.DefaultIamPrincipal;
 import software.amazon.awssdk.utils.builder.CopyableBuilder;
 import software.amazon.awssdk.utils.builder.ToCopyableBuilder;
 
 public interface IamPrincipal extends ToCopyableBuilder<IamPrincipal.Builder, IamPrincipal> {
-    IamPrincipal ALL = create(AWS, "*");
+    IamPrincipal ALL = create("*", "*");
 
     static IamPrincipal create(IamPrincipalType principalType, String principalId) {
         return builder().type(principalType).id(principalId).build();
@@ -38,15 +36,10 @@ public interface IamPrincipal extends ToCopyableBuilder<IamPrincipal.Builder, Ia
 
     IamPrincipalType type();
     String id();
-    boolean notPrincipal();
 
     interface Builder extends CopyableBuilder<Builder, IamPrincipal> {
         Builder type(IamPrincipalType type);
         Builder type(String type);
         Builder id(String id);
-
-        Builder notPrincipal();
-
-        IamPrincipal build();
     }
 }

@@ -60,7 +60,7 @@ public class DefaultIamPolicy implements IamPolicy {
     }
 
     @Override
-    public Map<String, String> additionalJsonFields() {
+    public Map<String, String> additionalJsonFieldsUnsafe() {
         return Collections.unmodifiableMap(additionalJsonFields);
     }
 
@@ -116,8 +116,8 @@ public class DefaultIamPolicy implements IamPolicy {
         return ToString.builder("IamPolicy")
                        .add("id", id)
                        .add("version", version)
-                       .add("statements", statements)
-                       .add("additionalJsonFields", additionalJsonFields)
+                       .add("statements", statements.isEmpty() ? null : statements)
+                       .add("additionalJsonFields", additionalJsonFields.isEmpty() ? null : additionalJsonFields)
                        .build();
     }
 
@@ -176,7 +176,7 @@ public class DefaultIamPolicy implements IamPolicy {
         }
 
         @Override
-        public IamPolicy.Builder putAdditionalJsonField(String key, String json) {
+        public IamPolicy.Builder putJsonFieldUnsafe(String key, String json) {
             this.additionalJsonFields.put(key, json);
             return this;
         }

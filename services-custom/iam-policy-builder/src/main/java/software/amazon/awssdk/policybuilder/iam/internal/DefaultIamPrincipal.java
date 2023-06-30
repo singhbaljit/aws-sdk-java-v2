@@ -23,12 +23,10 @@ import software.amazon.awssdk.utils.Validate;
 public class DefaultIamPrincipal implements IamPrincipal {
     private final IamPrincipalType type;
     private final String id;
-    private final boolean notPrincipal;
 
     private DefaultIamPrincipal(Builder builder) {
         this.type = Validate.paramNotNull(builder.type, "principalType");
         this.id = Validate.paramNotNull(builder.id, "principalId");
-        this.notPrincipal = builder.notPrincipal;
     }
 
     @Override
@@ -39,11 +37,6 @@ public class DefaultIamPrincipal implements IamPrincipal {
     @Override
     public String id() {
         return id;
-    }
-
-    @Override
-    public boolean notPrincipal() {
-        return notPrincipal;
     }
 
     @Override
@@ -62,9 +55,6 @@ public class DefaultIamPrincipal implements IamPrincipal {
 
         DefaultIamPrincipal that = (DefaultIamPrincipal) o;
 
-        if (notPrincipal != that.notPrincipal) {
-            return false;
-        }
         if (!type.equals(that.type)) {
             return false;
         }
@@ -75,7 +65,6 @@ public class DefaultIamPrincipal implements IamPrincipal {
     public int hashCode() {
         int result = type.hashCode();
         result = 31 * result + id.hashCode();
-        result = 31 * result + (notPrincipal ? 1 : 0);
         return result;
     }
 
@@ -84,21 +73,18 @@ public class DefaultIamPrincipal implements IamPrincipal {
         return ToString.builder("IamPrincipal")
                        .add("type", type)
                        .add("id", id)
-                       .add("notPrincipal", notPrincipal)
                        .build();
     }
 
     public static class Builder implements IamPrincipal.Builder {
         private IamPrincipalType type;
         private String id;
-        private boolean notPrincipal = false;
 
         public Builder() {}
 
         public Builder(DefaultIamPrincipal principal) {
             this.type = principal.type;
             this.id = principal.id;
-            this.notPrincipal = principal.notPrincipal;
         }
 
         @Override
@@ -116,12 +102,6 @@ public class DefaultIamPrincipal implements IamPrincipal {
         @Override
         public IamPrincipal.Builder id(String id) {
             this.id = id;
-            return this;
-        }
-
-        @Override
-        public IamPrincipal.Builder notPrincipal() {
-            this.notPrincipal = true;
             return this;
         }
 

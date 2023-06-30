@@ -40,8 +40,11 @@ public class DefaultIamStatement implements IamStatement {
     private final String sid;
     private final IamEffect effect;
     private final List<IamPrincipal> principals;
+    private final List<IamPrincipal> notPrincipals;
     private final List<IamAction> actions;
+    private final List<IamAction> notActions;
     private final List<IamResource> resources;
+    private final List<IamResource> notResources;
     private final List<IamCondition> conditions;
     private final Map<String, String> additionalJsonFields;
 
@@ -49,8 +52,11 @@ public class DefaultIamStatement implements IamStatement {
         this.sid = builder.sid;
         this.effect = Validate.paramNotNull(builder.effect, "statementEffect");
         this.principals = new ArrayList<>(builder.principals);
-        this.actions = Validate.notEmpty(new ArrayList<>(builder.actions), "At least one action is required");
-        this.resources = Validate.notEmpty(new ArrayList<>(builder.resources), "At least one resource is required");
+        this.notPrincipals = new ArrayList<>(builder.notPrincipals);
+        this.actions = new ArrayList<>(builder.actions);
+        this.notActions = new ArrayList<>(builder.notActions);
+        this.resources = new ArrayList<>(builder.resources);
+        this.notResources = new ArrayList<>(builder.notResources);
         this.conditions = new ArrayList<>(builder.conditions);
         this.additionalJsonFields = new LinkedHashMap<>(builder.additionalJsonFields);
     }
@@ -71,8 +77,18 @@ public class DefaultIamStatement implements IamStatement {
     }
 
     @Override
+    public List<IamPrincipal> notPrincipals() {
+        return Collections.unmodifiableList(notPrincipals);
+    }
+
+    @Override
     public List<IamAction> actions() {
         return Collections.unmodifiableList(actions);
+    }
+
+    @Override
+    public List<IamAction> notActions() {
+        return Collections.unmodifiableList(notActions);
     }
 
     @Override
@@ -81,12 +97,17 @@ public class DefaultIamStatement implements IamStatement {
     }
 
     @Override
+    public List<IamResource> notResources() {
+        return Collections.unmodifiableList(notResources);
+    }
+
+    @Override
     public List<IamCondition> conditions() {
         return Collections.unmodifiableList(conditions);
     }
 
     @Override
-    public Map<String, String> additionalJsonFields() {
+    public Map<String, String> additionalJsonFieldsUnsafe() {
         return Collections.unmodifiableMap(additionalJsonFields);
     }
 
@@ -115,10 +136,19 @@ public class DefaultIamStatement implements IamStatement {
         if (!principals.equals(that.principals)) {
             return false;
         }
+        if (!notPrincipals.equals(that.notPrincipals)) {
+            return false;
+        }
         if (!actions.equals(that.actions)) {
             return false;
         }
+        if (!notActions.equals(that.notActions)) {
+            return false;
+        }
         if (!resources.equals(that.resources)) {
+            return false;
+        }
+        if (!notResources.equals(that.notResources)) {
             return false;
         }
         if (!conditions.equals(that.conditions)) {
@@ -132,8 +162,11 @@ public class DefaultIamStatement implements IamStatement {
         int result = sid != null ? sid.hashCode() : 0;
         result = 31 * result + effect.hashCode();
         result = 31 * result + principals.hashCode();
+        result = 31 * result + notPrincipals.hashCode();
         result = 31 * result + actions.hashCode();
+        result = 31 * result + notActions.hashCode();
         result = 31 * result + resources.hashCode();
+        result = 31 * result + notResources.hashCode();
         result = 31 * result + conditions.hashCode();
         result = 31 * result + additionalJsonFields.hashCode();
         return result;
@@ -144,11 +177,14 @@ public class DefaultIamStatement implements IamStatement {
         return ToString.builder("IamStatement")
                        .add("sid", sid)
                        .add("effect", effect)
-                       .add("principals", principals)
-                       .add("actions", actions)
-                       .add("resources", resources)
-                       .add("conditions", conditions)
-                       .add("additionalJsonFields", additionalJsonFields)
+                       .add("principals", principals.isEmpty() ? null : principals)
+                       .add("notPrincipals", notPrincipals.isEmpty() ? null : notPrincipals)
+                       .add("actions", actions.isEmpty() ? null : actions)
+                       .add("notActions", notActions.isEmpty() ? null : notActions)
+                       .add("resources", resources.isEmpty() ? null : resources)
+                       .add("notResources", notResources.isEmpty() ? null : notResources)
+                       .add("conditions", conditions.isEmpty() ? null : conditions)
+                       .add("additionalJsonFields", additionalJsonFields.isEmpty() ? null : additionalJsonFields)
                        .build();
     }
 
@@ -156,8 +192,11 @@ public class DefaultIamStatement implements IamStatement {
         private String sid;
         private IamEffect effect;
         private final List<IamPrincipal> principals = new ArrayList<>();
+        private final List<IamPrincipal> notPrincipals = new ArrayList<>();
         private final List<IamAction> actions = new ArrayList<>();
+        private final List<IamAction> notActions = new ArrayList<>();
         private final List<IamResource> resources = new ArrayList<>();
+        private final List<IamResource> notResources = new ArrayList<>();
         private final List<IamCondition> conditions = new ArrayList<>();
         private final Map<String, String> additionalJsonFields = new LinkedHashMap<>();
 
@@ -168,8 +207,11 @@ public class DefaultIamStatement implements IamStatement {
             this.sid = statement.sid;
             this.effect = statement.effect;
             this.principals.addAll(statement.principals);
+            this.notPrincipals.addAll(statement.notPrincipals);
             this.actions.addAll(statement.actions);
+            this.notActions.addAll(statement.notActions);
             this.resources.addAll(statement.resources);
+            this.notResources.addAll(statement.notResources);
             this.conditions.addAll(statement.conditions);
             this.additionalJsonFields.putAll(statement.additionalJsonFields);
 
@@ -227,6 +269,45 @@ public class DefaultIamStatement implements IamStatement {
         }
 
         @Override
+        public IamStatement.Builder notPrincipals(Collection<IamPrincipal> notPrincipals) {
+            this.notPrincipals.clear();
+            this.notPrincipals.addAll(notPrincipals);
+            return this;
+        }
+
+        @Override
+        public IamStatement.Builder notPrincipals(IamPrincipal... notPrincipals) {
+            this.notPrincipals.clear();
+            this.notPrincipals.addAll(Arrays.asList(notPrincipals));
+            return this;
+        }
+
+        @Override
+        public IamStatement.Builder addNotPrincipal(IamPrincipal notPrincipal) {
+            this.notPrincipals.add(notPrincipal);
+            return this;
+        }
+
+        @Override
+        public IamStatement.Builder addNotPrincipal(Consumer<IamPrincipal.Builder> notPrincipal) {
+            this.notPrincipals.add(IamPrincipal.builder().applyMutation(notPrincipal).build());
+            return this;
+        }
+
+        @Override
+        public IamStatement.Builder addNotPrincipals(IamPrincipalType iamPrincipalType, String... notPrincipals) {
+            for (String notPrincipal : notPrincipals) {
+                this.notPrincipals.add(IamPrincipal.create(iamPrincipalType, notPrincipal));
+            }
+            return this;
+        }
+
+        @Override
+        public IamStatement.Builder addNotPrincipals(String iamPrincipalType, String... notPrincipals) {
+            return addPrincipals(IamPrincipalType.create(iamPrincipalType), notPrincipals);
+        }
+
+        @Override
         public IamStatement.Builder actions(Collection<IamAction> actions) {
             this.actions.clear();
             this.actions.addAll(actions);
@@ -249,6 +330,32 @@ public class DefaultIamStatement implements IamStatement {
         @Override
         public IamStatement.Builder addAction(String action) {
             this.actions.add(IamAction.create(action));
+            return this;
+        }
+
+        @Override
+        public IamStatement.Builder notActions(Collection<IamAction> notActions) {
+            this.notActions.clear();
+            this.notActions.addAll(notActions);
+            return this;
+        }
+
+        @Override
+        public IamStatement.Builder notActions(IamAction... notActions) {
+            this.notActions.clear();
+            this.notActions.addAll(Arrays.asList(notActions));
+            return this;
+        }
+
+        @Override
+        public IamStatement.Builder addNotAction(IamAction notAction) {
+            this.notActions.add(notAction);
+            return this;
+        }
+
+        @Override
+        public IamStatement.Builder addNotAction(String notAction) {
+            this.notActions.add(IamAction.create(notAction));
             return this;
         }
 
@@ -279,6 +386,32 @@ public class DefaultIamStatement implements IamStatement {
         }
 
         @Override
+        public IamStatement.Builder notResources(Collection<IamResource> notResources) {
+            this.notResources.clear();
+            this.notResources.addAll(notResources);
+            return this;
+        }
+
+        @Override
+        public IamStatement.Builder notResources(IamResource... notResources) {
+            this.notResources.clear();
+            this.notResources.addAll(Arrays.asList(notResources));
+            return this;
+        }
+
+        @Override
+        public IamStatement.Builder addNotResource(IamResource notResource) {
+            this.notResources.add(notResource);
+            return this;
+        }
+
+        @Override
+        public IamStatement.Builder addNotResource(String notResource) {
+            this.notResources.add(IamResource.create(notResource));
+            return this;
+        }
+
+        @Override
         public IamStatement.Builder conditions(Collection<IamCondition> conditions) {
             this.conditions.clear();
             this.conditions.addAll(conditions);
@@ -305,9 +438,21 @@ public class DefaultIamStatement implements IamStatement {
         }
 
         @Override
+        public IamStatement.Builder addCondition(IamConditionOperator operator, IamConditionKey key, String value) {
+            this.conditions.add(IamCondition.create(operator, key, value));
+            return this;
+        }
+
+        @Override
+        public IamStatement.Builder addCondition(String operator, String key, String value) {
+            this.conditions.add(IamCondition.create(operator, key, value));
+            return this;
+        }
+
+        @Override
         public IamStatement.Builder addConditions(IamConditionOperator operator,
-                                                  IamConditionKey key,
-                                                  Collection<String> values) {
+                                                 IamConditionKey key,
+                                                 Collection<String> values) {
             for (String value : values) {
                 this.conditions.add(IamCondition.create(operator, key, value));
             }
@@ -330,7 +475,7 @@ public class DefaultIamStatement implements IamStatement {
         }
 
         @Override
-        public IamStatement.Builder putAdditionalJsonField(String key, String json) {
+        public IamStatement.Builder putJsonFieldUnsafe(String key, String json) {
             this.additionalJsonFields.put(key, json);
             return this;
         }

@@ -21,26 +21,14 @@ import software.amazon.awssdk.utils.Validate;
 
 public class DefaultIamAction implements IamAction {
     private final String value;
-    private final boolean notAction;
 
-    public DefaultIamAction(Builder builder) {
-        this.value = Validate.paramNotNull(builder.value, "actionValue");
-        this.notAction = builder.notAction;
+    public DefaultIamAction(String value) {
+        this.value = Validate.paramNotNull(value, "actionValue");
     }
 
     @Override
     public String value() {
         return value;
-    }
-
-    @Override
-    public boolean notAction() {
-        return notAction;
-    }
-
-    @Override
-    public IamAction.Builder toBuilder() {
-        return new Builder(this);
     }
 
     @Override
@@ -54,58 +42,18 @@ public class DefaultIamAction implements IamAction {
 
         DefaultIamAction that = (DefaultIamAction) o;
 
-        if (notAction != that.notAction) {
-            return false;
-        }
-        if (!value.equals(that.value)) {
-            return false;
-        }
-
-        return true;
+        return value.equals(that.value);
     }
 
     @Override
     public int hashCode() {
-        int result = value.hashCode();
-        result = 31 * result + (notAction ? 1 : 0);
-        return result;
+        return value.hashCode();
     }
 
     @Override
     public String toString() {
         return ToString.builder("IamAction")
                        .add("value", value)
-                       .add("notAction", notAction)
                        .build();
-    }
-
-    public static class Builder implements IamAction.Builder {
-        private String value;
-        private boolean notAction = false;
-
-        public Builder() {
-        }
-
-        public Builder(DefaultIamAction action) {
-            this.value = action.value;
-            this.notAction = action.notAction;
-        }
-
-        @Override
-        public IamAction.Builder value(String value) {
-            this.value = value;
-            return this;
-        }
-
-        @Override
-        public IamAction.Builder notAction() {
-            this.notAction = true;
-            return this;
-        }
-
-        @Override
-        public IamAction build() {
-            return new DefaultIamAction(this);
-        }
     }
 }

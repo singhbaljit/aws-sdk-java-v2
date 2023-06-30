@@ -15,14 +15,12 @@
 
 package software.amazon.awssdk.policybuilder.iam;
 
-import software.amazon.awssdk.policybuilder.iam.internal.DefaultIamAction;
+import java.util.Map;
 
-public interface IamAction extends IamValue {
-    IamAction ALL = create("*");
+public interface IamStructure {
+    Map<String, String> additionalJsonFieldsUnsafe();
 
-    String value();
-
-    static IamAction create(String value) {
-        return new DefaultIamAction(value);
+    interface Builder<T extends Builder> {
+        T putJsonFieldUnsafe(String key, String json);
     }
 }

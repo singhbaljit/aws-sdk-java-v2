@@ -16,25 +16,13 @@
 package software.amazon.awssdk.policybuilder.iam;
 
 import software.amazon.awssdk.policybuilder.iam.internal.DefaultIamResource;
-import software.amazon.awssdk.utils.builder.CopyableBuilder;
-import software.amazon.awssdk.utils.builder.ToCopyableBuilder;
 
-public interface IamResource extends IamValue, ToCopyableBuilder<IamResource.Builder, IamResource> {
+public interface IamResource extends IamValue {
     IamResource ALL = create("*");
 
     String value();
-    boolean notResource();
 
     static IamResource create(String value) {
-        return builder().value(value).build();
-    }
-
-    static Builder builder() {
-        return new DefaultIamResource.Builder();
-    }
-
-    interface Builder extends CopyableBuilder<Builder, IamResource> {
-        Builder value(String value);
-        Builder notResource();
+        return new DefaultIamResource(value);
     }
 }
