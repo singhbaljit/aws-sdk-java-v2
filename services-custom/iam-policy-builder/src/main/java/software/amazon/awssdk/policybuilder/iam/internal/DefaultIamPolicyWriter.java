@@ -36,7 +36,7 @@ public class DefaultIamPolicyWriter implements IamPolicyWriter {
     private static final String SINGLE_INDENTATION = "    ";
     private static final IamPolicyWriter INSTANCE = IamPolicyWriter.builder().build();
 
-    private final String[] indentation = new String[INDENTATION_TABLE_SIZE];
+    private final String[] indentationTable = new String[INDENTATION_TABLE_SIZE];
     private final String afterColonSpacing;
     private final Boolean prettyPrint;
 
@@ -52,12 +52,12 @@ public class DefaultIamPolicyWriter implements IamPolicyWriter {
             StringBuilder indent = new StringBuilder();
             indent.append("\n");
             for (int i = 0; i < INDENTATION_TABLE_SIZE; i++) {
-                indentation[i] = indent.toString();
+                indentationTable[i] = indent.toString();
                 indent.append(SINGLE_INDENTATION);
             }
             afterColonSpacing = " ";
         } else {
-            Arrays.fill(indentation, "");
+            Arrays.fill(indentationTable, "");
             afterColonSpacing = "";
         }
     }
@@ -67,62 +67,62 @@ public class DefaultIamPolicyWriter implements IamPolicyWriter {
         StringBuilder result = new StringBuilder();
         result.append("{");
 
-        appendStringField(result, indentation[1], "Version", policy.version());
-        appendStringField(result, indentation[1], "Id", policy.id());
-        appendStatements(result, policy.statements());
-        appendAdditionalJson(result, indentation[1], policy.additionalJsonFieldsUnsafe());
+        appendStringField(result, 1, "Version", policy.version());
+        appendStringField(result, 1, "Id", policy.id());
+        appendStatements(result, 1, policy.statements());
+        appendAdditionalJson(result, 1, policy.additionalJsonFieldsUnsafe());
 
         trimComma(result);
-        result.append(indentation[0]).append("}");
+        result.append(indentationTable[0]).append("}");
         return result.toString();
     }
 
-    private void appendStatements(StringBuilder result, List<IamStatement> statements) {
+    private void appendStatements(StringBuilder result, int indentation, List<IamStatement> statements) {
         if (statements.isEmpty()) {
             return;
         }
 
         if (statements.size() == 1) {
-            appendObjectFieldStart(result, indentation[1], "Statement");
-            appendStatementBody(result, statements.get(0));
+            appendObjectFieldStart(result, indentation, "Statement");
+            appendStatementBody(result, indentation + 1, statements.get(0));
             trimComma(result);
-            appendObjectFieldEnd(result, indentation[1]);
+            appendObjectFieldEnd(result, indentation);
             return;
         }
 
-        appendArrayFieldStart(result, indentation[1], "Statement");
-        statements.forEach(statement -> appendStatement(result, statement));
+        appendArrayFieldStart(result, indentation, "Statement");
+        statements.forEach(statement -> appendStatement(result, indentation + 1, statement));
         trimComma(result);
-        appendArrayFieldEnd(result, indentation[1]);
+        appendArrayFieldEnd(result, indentation);
     }
 
-    private void appendStatement(StringBuilder result, IamStatement statement) {
-        result.append(indentation[2]).append("{");
-        appendStatementBody(result, statement);
+    private void appendStatement(StringBuilder result, int indentation, IamStatement statement) {
+        result.append(indentationTable[indentation]).append("{");
+        appendStatementBody(result, indentation + 1, statement);
         trimComma(result);
-        result.append(indentation[2]).append("},");
+        result.append(indentationTable[indentation]).append("},");
     }
 
-    private void appendStatementBody(StringBuilder result, IamStatement statement) {
-        appendStringField(result, indentation[3], "Sid", statement.sid());
-        appendStringField(result, indentation[3], "Effect", statement.effect());
-        appendPrincipals(result, "Principal", statement.principals());
-        appendPrincipals(result, "NotPrincipal", statement.notPrincipals());
-        appendValueArrayField(result, indentation[3], indentation[4], "Action", statement.actions());
-        appendValueArrayField(result, indentation[3], indentation[4], "NotAction", statement.notActions());
-        appendValueArrayField(result, indentation[3], indentation[4], "Resource", statement.actions());
-        appendValueArrayField(result, indentation[3], indentation[4], "NotResource", statement.notResources());
-        appendConditions(result, statement.conditions());
-        appendAdditionalJson(result, indentation[3], statement.additionalJsonFieldsUnsafe());
+    private void appendStatementBody(StringBuilder result, int indentation, IamStatement statement) {
+        appendStringField(result, indentation, "Sid", statement.sid());
+        appendStringField(result, indentation, "Effect", statement.effect());
+        appendPrincipals(result, indentation, "Principal", statement.principals());
+        appendPrincipals(result, indentation, "NotPrincipal", statement.notPrincipals());
+        appendValueArrayField(result, indentation, "Action", statement.actions());
+        appendValueArrayField(result, indentation, "NotAction", statement.notActions());
+        appendValueArrayField(result, indentation, "Resource", statement.actions());
+        appendValueArrayField(result, indentation, "NotResource", statement.notResources());
+        appendConditions(result, indentation, statement.conditions());
+        appendAdditionalJson(result, indentation, statement.additionalJsonFieldsUnsafe());
     }
 
-    private void appendPrincipals(StringBuilder result, String fieldName, List<IamPrincipal> principals) {
+    private void appendPrincipals(StringBuilder result, int indentation, String fieldName, List<IamPrincipal> principals) {
         if (principals.isEmpty()) {
             return;
         }
 
         if (principals.size() == 1 && principals.get(0).equals(IamPrincipal.ALL)) {
-            appendStringField(result, indentation[3], fieldName, IamPrincipal.ALL.id());
+            appendStringField(result, indentation, fieldName, IamPrincipal.ALL.id());
             return;
         }
 
@@ -132,18 +132,18 @@ public class DefaultIamPolicyWriter implements IamPolicyWriter {
                                 .add(principal.id());
         });
 
-        appendObjectFieldStart(result, indentation[3], fieldName);
+        appendObjectFieldStart(result, indentation, fieldName);
         aggregatedPrincipals.forEach((principalType, ids) -> {
-            appendArrayField(result, indentation[4], indentation[5], principalType.value(), ids);
+            appendArrayField(result, indentation + 1, principalType.value(), ids);
         });
         if (!aggregatedPrincipals.isEmpty()) {
             trimComma(result);
         }
-        appendObjectFieldEnd(result, indentation[3]);
+        appendObjectFieldEnd(result, indentation);
     }
 
 
-    private void appendConditions(StringBuilder result, List<IamCondition> conditions) {
+    private void appendConditions(StringBuilder result, int indentation, List<IamCondition> conditions) {
         if (conditions.isEmpty()) {
             return;
         }
@@ -155,26 +155,26 @@ public class DefaultIamPolicyWriter implements IamPolicyWriter {
                                 .add(condition.value());
         });
 
-        appendObjectFieldStart(result, indentation[3], "Condition");
+        appendObjectFieldStart(result, indentation, "Condition");
         aggregatedConditions.forEach((operator, keyValues) -> {
-            appendObjectFieldStart(result, indentation[4], operator.value());
+            appendObjectFieldStart(result, indentation + 1, operator.value());
             keyValues.forEach((key, values) -> {
-                appendArrayField(result, indentation[5], indentation[6], key.value(), values);
+                appendArrayField(result, indentation + 2, key.value(), values);
             });
             trimComma(result);
-            appendObjectFieldEnd(result, indentation[4]);
+            appendObjectFieldEnd(result, indentation + 1);
         });
         trimComma(result);
-        appendObjectFieldEnd(result, indentation[3]);
+        appendObjectFieldEnd(result, indentation);
     }
 
-    private void appendAdditionalJson(StringBuilder result, String indentation, Map<String, String> jsonEntries) {
+    private void appendAdditionalJson(StringBuilder result, int indentation, Map<String, String> jsonEntries) {
         if (jsonEntries.isEmpty()) {
             return;
         }
 
         jsonEntries.forEach((key, value) -> {
-            result.append(indentation);
+            result.append(indentationTable[indentation]);
             appendInlineString(result, key);
             appendColon(result);
             result.append(value);
@@ -182,35 +182,35 @@ public class DefaultIamPolicyWriter implements IamPolicyWriter {
         });
     }
 
-    private void appendValueArrayField(StringBuilder result, String fieldIndentation, String valueIndentation,
+    private void appendValueArrayField(StringBuilder result, int indentation,
                                        String fieldName, List<? extends IamValue> fieldValues) {
         List<String> values = new ArrayList<>(fieldValues.size());
         fieldValues.forEach(v -> values.add(v.value()));
-        appendArrayField(result, fieldIndentation, valueIndentation, fieldName, values);
+        appendArrayField(result, indentation, fieldName, values);
     }
 
-    private void appendArrayField(StringBuilder result, String fieldIndentation, String valueIndentation,
+    private void appendArrayField(StringBuilder result, int indentation,
                                   String fieldName, List<String> fieldValues) {
         if (fieldValues.isEmpty()) {
             return;
         }
 
         if (fieldValues.size() == 1) {
-            appendStringField(result, fieldIndentation, fieldName, fieldValues.get(0));
+            appendStringField(result, indentation, fieldName, fieldValues.get(0));
             return;
         }
 
-        appendArrayFieldStart(result, fieldIndentation, fieldName);
+        appendArrayFieldStart(result, indentation, fieldName);
         fieldValues.forEach(value -> {
-            appendString(result, valueIndentation, value);
+            appendString(result, indentation + 1, value);
         });
         if (!fieldValues.isEmpty()) {
             trimComma(result);
         }
-        appendArrayFieldEnd(result, fieldIndentation);
+        appendArrayFieldEnd(result, indentation);
     }
 
-    private void appendStringField(StringBuilder builder, String indentation, String key, IamValue value) {
+    private void appendStringField(StringBuilder builder, int indentation, String key, IamValue value) {
         if (value == null) {
             return;
         }
@@ -218,9 +218,9 @@ public class DefaultIamPolicyWriter implements IamPolicyWriter {
         appendStringField(builder, indentation, key, value.value());
     }
 
-    private void appendStringField(StringBuilder builder, String indentation, String key, String value) {
+    private void appendStringField(StringBuilder builder, int indentation, String key, String value) {
         if (value != null) {
-            builder.append(indentation);
+            builder.append(indentationTable[indentation]);
             appendInlineString(builder, key);
             appendColon(builder);
             appendInlineString(builder, value);
@@ -228,27 +228,27 @@ public class DefaultIamPolicyWriter implements IamPolicyWriter {
         }
     }
 
-    private void appendObjectFieldStart(StringBuilder builder, String indentation, String key) {
-        builder.append(indentation);
+    private void appendObjectFieldStart(StringBuilder builder, int indentation, String key) {
+        builder.append(indentationTable[indentation]);
         appendInlineString(builder, key);
         appendColon(builder);
         builder.append("{");
     }
 
-    private void appendObjectFieldEnd(StringBuilder builder, String indentation) {
-        builder.append(indentation);
+    private void appendObjectFieldEnd(StringBuilder builder, int indentation) {
+        builder.append(indentationTable[indentation]);
         builder.append("},");
     }
 
-    private void appendArrayFieldStart(StringBuilder builder, String indentation, String key) {
-        builder.append(indentation);
+    private void appendArrayFieldStart(StringBuilder builder, int indentation, String key) {
+        builder.append(indentationTable[indentation]);
         appendInlineString(builder, key);
         appendColon(builder);
         builder.append("[");
     }
 
-    private void appendArrayFieldEnd(StringBuilder builder, String indentation) {
-        builder.append(indentation);
+    private void appendArrayFieldEnd(StringBuilder builder, int indentation) {
+        builder.append(indentationTable[indentation]);
         builder.append("],");
     }
 
@@ -261,8 +261,8 @@ public class DefaultIamPolicyWriter implements IamPolicyWriter {
         builder.setLength(builder.length() - 1);
     }
 
-    private void appendString(StringBuilder builder, String indentation, String stringToQuote) {
-        builder.append(indentation);
+    private void appendString(StringBuilder builder, int indentation, String stringToQuote) {
+        builder.append(indentationTable[indentation]);
         appendInlineString(builder, stringToQuote);
         builder.append(",");
     }
