@@ -16,13 +16,14 @@
 package software.amazon.awssdk.policybuilder.iam.internal;
 
 import software.amazon.awssdk.policybuilder.iam.IamAction;
+import software.amazon.awssdk.utils.Validate;
 
 public class DefaultIamAction implements IamAction {
     private final String value;
     private final boolean notAction;
 
     public DefaultIamAction(Builder builder) {
-        this.value = builder.value;
+        this.value = Validate.paramNotNull(builder.value, "actionValue");
         this.notAction = builder.notAction;
     }
 

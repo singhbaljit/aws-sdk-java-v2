@@ -21,6 +21,8 @@ import java.util.List;
 import java.util.Map;
 import software.amazon.awssdk.policybuilder.iam.IamAction;
 import software.amazon.awssdk.policybuilder.iam.IamCondition;
+import software.amazon.awssdk.policybuilder.iam.IamConditionKey;
+import software.amazon.awssdk.policybuilder.iam.IamConditionOperator;
 import software.amazon.awssdk.policybuilder.iam.IamPolicy;
 import software.amazon.awssdk.policybuilder.iam.IamPolicyWriter;
 import software.amazon.awssdk.policybuilder.iam.IamPrincipal;
@@ -77,11 +79,7 @@ public class DefaultIamPolicyWriter implements IamPolicyWriter {
         appendResources(result, statement.resources());
         appendConditions(result, statement.conditions());
         trimLastLineComma(result);
-        result.append(INDENTATION_1).append("},");
-    }
-
-    private void appendConditions(StringBuilder result, List<IamCondition> conditions) {
-        // TODO
+        result.append(INDENTATION_1).append("},\n");
     }
 
     private void appendPrincipals(StringBuilder result, List<IamPrincipal> principals) {
@@ -93,7 +91,7 @@ public class DefaultIamPolicyWriter implements IamPolicyWriter {
         principals.forEach(principal -> {
             aggregatedPrincipals.computeIfAbsent(principal.notPrincipal(), t -> new LinkedHashMap<>())
                                 .computeIfAbsent(principal.type(), t -> new ArrayList<>())
-                                .addAll(principal.ids());
+                                .add(principal.id());
         });
 
         appendPrincipals(result, "Principal", aggregatedPrincipals.get(true));
@@ -109,14 +107,7 @@ public class DefaultIamPolicyWriter implements IamPolicyWriter {
 
         appendObjectFieldStart(result, INDENTATION_2, principalKey);
         principals.forEach((principalType, ids) -> {
-            appendArrayFieldStart(result, INDENTATION_3, principalType.value());
-            ids.forEach(action -> {
-                appendQuoteString(result, INDENTATION_4, action);
-            });
-            if (!ids.isEmpty()) {
-                trimLastLineComma(result);
-            }
-            appendArrayFieldEnd(result, INDENTATION_3);
+            appendArrayField(result, INDENTATION_3, INDENTATION_4, principalType.value(), ids);
         });
         if (!principals.isEmpty()) {
             trimLastLineComma(result);
@@ -135,23 +126,8 @@ public class DefaultIamPolicyWriter implements IamPolicyWriter {
                              .add(action.value());
         });
 
-        appendActions(result, "Action", aggregatedActions.get(true));
-        appendActions(result, "NotAction", aggregatedActions.get(false));
-    }
-
-    private void appendActions(StringBuilder result, String actionKey, List<String> actions) {
-        if (actions == null) {
-            return;
-        }
-
-        appendArrayFieldStart(result, INDENTATION_2, actionKey);
-        actions.forEach(action -> {
-            appendQuoteString(result, INDENTATION_4, action);
-        });
-        if (!actions.isEmpty()) {
-            trimLastLineComma(result);
-        }
-        appendArrayFieldEnd(result, INDENTATION_2);
+        appendArrayField(result, INDENTATION_2, INDENTATION_3, "Action", aggregatedActions.get(false));
+        appendArrayField(result, INDENTATION_2, INDENTATION_3, "NotAction", aggregatedActions.get(true));
     }
 
     private void appendResources(StringBuilder result, List<IamResource> resources) {
@@ -162,26 +138,59 @@ public class DefaultIamPolicyWriter implements IamPolicyWriter {
         Map<Boolean, List<String>> aggregatedResources = new LinkedHashMap<>(2);
         resources.forEach(resource -> {
             aggregatedResources.computeIfAbsent(resource.notResource(), t -> new ArrayList<>())
-                             .add(resource.value());
+                               .add(resource.value());
         });
 
-        appendResources(result, "Resource", aggregatedResources.get(true));
-        appendResources(result, "NotResource", aggregatedResources.get(false));
+        appendArrayField(result, INDENTATION_2, INDENTATION_3, "Resource", aggregatedResources.get(false));
+        appendArrayField(result, INDENTATION_2, INDENTATION_3, "NotResource", aggregatedResources.get(true));
     }
 
-    private void appendResources(StringBuilder result, String resourceKey, List<String> resources) {
-        if (resources == null) {
+    private void appendConditions(StringBuilder result, List<IamCondition> conditions) {
+        if (conditions.isEmpty()) {
             return;
         }
 
-        appendArrayFieldStart(result, INDENTATION_2, resourceKey);
-        resources.forEach(resource -> {
-            appendQuoteString(result, INDENTATION_4, resource);
+        Map<IamConditionOperator, Map<IamConditionKey, List<String>>> aggregatedConditions = new LinkedHashMap<>();
+        conditions.forEach(condition -> {
+            aggregatedConditions.computeIfAbsent(condition.operator(), t -> new LinkedHashMap<>())
+                                .computeIfAbsent(condition.key(), t -> new ArrayList<>())
+                                .add(condition.value());
         });
-        if (!resources.isEmpty()) {
+
+        System.out.println(aggregatedConditions);
+
+        appendObjectFieldStart(result, INDENTATION_2, "Condition");
+        aggregatedConditions.forEach((operator, keyValues) -> {
+            appendObjectFieldStart(result, INDENTATION_3, operator.value());
+            keyValues.forEach((key, values) -> {
+                appendArrayField(result, INDENTATION_4, INDENTATION_5, key.value(), values);
+            });
+            trimLastLineComma(result);
+            appendObjectFieldEnd(result, INDENTATION_3);
+        });
+        trimLastLineComma(result);
+        appendObjectFieldEnd(result, INDENTATION_2);
+    }
+
+    private void appendArrayField(StringBuilder result, String fieldIndentation, String valueIndentation,
+                                  String fieldName, List<String> fieldValues) {
+        if (fieldValues == null) {
+            return;
+        }
+
+        if (fieldValues.size() == 1) {
+            appendStringField(result, fieldIndentation, fieldName, fieldValues.get(0));
+            return;
+        }
+
+        appendArrayFieldStart(result, fieldIndentation, fieldName);
+        fieldValues.forEach(value -> {
+            appendString(result, valueIndentation, value);
+        });
+        if (!fieldValues.isEmpty()) {
             trimLastLineComma(result);
         }
-        appendArrayFieldEnd(result, INDENTATION_2);
+        appendArrayFieldEnd(result, fieldIndentation);
     }
 
     private void appendStringField(StringBuilder builder, String indentation, String key, IamValue value) {
@@ -195,16 +204,16 @@ public class DefaultIamPolicyWriter implements IamPolicyWriter {
     private void appendStringField(StringBuilder builder, String indentation, String key, String value) {
         if (value != null) {
             builder.append(indentation);
-            appendInlineQuoteString(builder, key);
+            appendInlineString(builder, key);
             builder.append(": ");
-            appendInlineQuoteString(builder, value);
+            appendInlineString(builder, value);
             builder.append(",\n");
         }
     }
 
     private void appendObjectFieldStart(StringBuilder builder, String indentation, String key) {
         builder.append(indentation);
-        appendInlineQuoteString(builder, key);
+        appendInlineString(builder, key);
         builder.append(": ");
         builder.append("{\n");
     }
@@ -216,7 +225,7 @@ public class DefaultIamPolicyWriter implements IamPolicyWriter {
 
     private void appendArrayFieldStart(StringBuilder builder, String indentation, String key) {
         builder.append(indentation);
-        appendInlineQuoteString(builder, key);
+        appendInlineString(builder, key);
         builder.append(": ");
         builder.append("[\n");
     }
@@ -231,19 +240,19 @@ public class DefaultIamPolicyWriter implements IamPolicyWriter {
         builder.append('\n');
     }
 
-    private void appendQuoteString(StringBuilder builder, String indentation, String stringToQuote) {
-        builder.append(indentation)
-               .append(stringToQuote)
-               .append(",\n");
+    private void appendString(StringBuilder builder, String indentation, String stringToQuote) {
+        builder.append(indentation);
+        appendInlineString(builder, stringToQuote);
+        builder.append(",\n");
     }
 
-    private void appendInlineQuoteString(StringBuilder builder, String stringToQuote) {
+    private void appendInlineString(StringBuilder builder, String stringToQuote) {
         builder.append('"')
-               .append(escapeStringForQuote(stringToQuote))
+               .append(escapeQuotes(stringToQuote))
                .append('"');
     }
 
-    private String escapeStringForQuote(String stringToQuote) {
+    private String escapeQuotes(String stringToQuote) {
         return StringUtils.replace(stringToQuote, "\"", "\\\"");
     }
 

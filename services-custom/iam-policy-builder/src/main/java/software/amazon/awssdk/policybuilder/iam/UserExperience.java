@@ -25,12 +25,14 @@ public class UserExperience {
 
                                                .addPrincipals(IamPrincipalType.AWS, "9999999999")
 
-                                               .addAction("s3:*")
+                                               .addAction(IamAction.ALL)
+                                               .addResource(IamResource.ALL)
 
-
-                                               .addCondition("StringEquals", "aws:PrincipalTag/job-category", "iamuser-admin")
-                                               .addCondition("StringEquals", "aws:PrincipalTag/role", "audit", "finance")
+                                               .addConditions("StringEquals", "aws:PrincipalTag/job-category", "iamuser-admin")
+                                               .addConditions("StringEquals", "aws:PrincipalTag/role", "audit", "finance")
                                                .build())
                      .build();
+
+        System.out.println(policy.toJson());
     }
 }

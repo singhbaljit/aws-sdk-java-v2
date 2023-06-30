@@ -16,12 +16,13 @@
 package software.amazon.awssdk.policybuilder.iam.internal;
 
 import software.amazon.awssdk.policybuilder.iam.IamConditionOperator;
+import software.amazon.awssdk.utils.Validate;
 
 public class DefaultIamConditionOperator implements IamConditionOperator {
     private final String value;
 
     public DefaultIamConditionOperator(String value) {
-        this.value = value;
+        this.value = Validate.paramNotNull(value, "conditionOperatorValue");
     }
 
     @Override

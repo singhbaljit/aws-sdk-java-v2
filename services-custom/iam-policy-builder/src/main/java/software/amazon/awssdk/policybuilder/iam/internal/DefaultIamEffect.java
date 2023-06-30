@@ -16,12 +16,13 @@
 package software.amazon.awssdk.policybuilder.iam.internal;
 
 import software.amazon.awssdk.policybuilder.iam.IamEffect;
+import software.amazon.awssdk.utils.Validate;
 
 public class DefaultIamEffect implements IamEffect {
     private final String value;
 
     public DefaultIamEffect(String value) {
-        this.value = value;
+        this.value = Validate.paramNotNull(value, "effectValue");
     }
 
     @Override

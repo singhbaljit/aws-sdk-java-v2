@@ -67,10 +67,10 @@ public interface IamStatement extends ToCopyableBuilder<IamStatement.Builder, Ia
         Builder conditions(IamCondition... conditions);
         Builder addCondition(IamCondition condition);
         Builder addCondition(Consumer<IamCondition.Builder> condition);
-        Builder addCondition(IamConditionOperator operator, IamConditionKey key, Collection<String> values);
-        Builder addCondition(IamConditionOperator operator, IamConditionKey key, String... values);
-        Builder addCondition(String operator, String key, Collection<String> values);
-        Builder addCondition(String operator, String key, String... values);
+        Builder addConditions(IamConditionOperator operator, IamConditionKey key, Collection<String> values);
+        Builder addConditions(IamConditionOperator operator, IamConditionKey key, String... values);
+        Builder addConditions(String operator, String key, Collection<String> values);
+        Builder addConditions(String operator, String key, String... values);
 
         Builder putAdditionalJsonField(String key, String json);
 

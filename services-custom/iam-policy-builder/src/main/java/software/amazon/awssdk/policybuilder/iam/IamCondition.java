@@ -15,8 +15,6 @@
 
 package software.amazon.awssdk.policybuilder.iam;
 
-import java.util.Collection;
-import java.util.List;
 import software.amazon.awssdk.policybuilder.iam.internal.DefaultIamCondition;
 import software.amazon.awssdk.utils.builder.CopyableBuilder;
 import software.amazon.awssdk.utils.builder.ToCopyableBuilder;
@@ -26,33 +24,23 @@ public interface IamCondition extends ToCopyableBuilder<IamCondition.Builder, Ia
         return new DefaultIamCondition.Builder();
     }
 
-    static IamCondition create(IamConditionOperator operator, IamConditionKey key, Collection<String> values) {
-        return builder().operator(operator).key(key).values(values).build();
+    static IamCondition create(IamConditionOperator operator, IamConditionKey key, String value) {
+        return builder().operator(operator).key(key).value(value).build();
     }
 
-    static IamCondition create(IamConditionOperator operator, IamConditionKey key, String... values) {
-        return builder().operator(operator).key(key).values(values).build();
-    }
-
-    static IamCondition create(String operator, String key, Collection<String> values) {
-        return builder().operator(operator).key(key).values(values).build();
-    }
-
-    static IamCondition create(String operator, String key, String... values) {
-        return builder().operator(operator).key(key).values(values).build();
+    static IamCondition create(String operator, String key, String value) {
+        return builder().operator(operator).key(key).value(value).build();
     }
 
     IamConditionOperator operator();
     IamConditionKey key();
-    List<String> values();
+    String value();
 
     interface Builder extends CopyableBuilder<Builder, IamCondition> {
         Builder operator(IamConditionOperator operator);
         Builder operator(String operator);
         Builder key(IamConditionKey key);
         Builder key(String key);
-        Builder values(Collection<String> values);
-        Builder values(String... values);
-        Builder addValue(String value);
+        Builder value(String value);
     }
 }

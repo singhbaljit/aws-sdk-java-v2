@@ -45,7 +45,7 @@ public class DefaultIamStatement implements IamStatement {
 
     public DefaultIamStatement(Builder builder) {
         this.sid = builder.sid;
-        this.effect = Validate.notNull(builder.effect, "The statement effect is required");
+        this.effect = Validate.paramNotNull(builder.effect, "statementEffect");
         this.principals = new ArrayList<>(builder.principals);
         this.actions = Validate.notEmpty(new ArrayList<>(builder.actions), "At least one action is required");
         this.resources = Validate.notEmpty(new ArrayList<>(builder.resources), "At least one resource is required");
@@ -246,29 +246,28 @@ public class DefaultIamStatement implements IamStatement {
         }
 
         @Override
-        public IamStatement.Builder addCondition(IamConditionOperator operator,
-                                                 IamConditionKey key,
-                                                 Collection<String> values) {
-            this.conditions.add(IamCondition.create(operator, key, values));
+        public IamStatement.Builder addConditions(IamConditionOperator operator,
+                                                  IamConditionKey key,
+                                                  Collection<String> values) {
+            for (String value : values) {
+                this.conditions.add(IamCondition.create(operator, key, value));
+            }
             return this;
         }
 
         @Override
-        public IamStatement.Builder addCondition(IamConditionOperator operator, IamConditionKey key, String... values) {
-            this.conditions.add(IamCondition.create(operator, key, values));
-            return this;
+        public IamStatement.Builder addConditions(IamConditionOperator operator, IamConditionKey key, String... values) {
+            return addConditions(operator, key, Arrays.asList(values));
         }
 
         @Override
-        public IamStatement.Builder addCondition(String operator, String key, Collection<String> values) {
-            this.conditions.add(IamCondition.create(operator, key, values));
-            return this;
+        public IamStatement.Builder addConditions(String operator, String key, Collection<String> values) {
+            return addConditions(IamConditionOperator.create(operator), IamConditionKey.create(key), values);
         }
 
         @Override
-        public IamStatement.Builder addCondition(String operator, String key, String... values) {
-            this.conditions.add(IamCondition.create(operator, key, values));
-            return this;
+        public IamStatement.Builder addConditions(String operator, String key, String... values) {
+            return addConditions(operator, key, Arrays.asList(values));
         }
 
         @Override

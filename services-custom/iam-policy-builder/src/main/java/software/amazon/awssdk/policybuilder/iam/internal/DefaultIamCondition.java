@@ -15,24 +15,20 @@
 
 package software.amazon.awssdk.policybuilder.iam.internal;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 import software.amazon.awssdk.policybuilder.iam.IamCondition;
 import software.amazon.awssdk.policybuilder.iam.IamConditionKey;
 import software.amazon.awssdk.policybuilder.iam.IamConditionOperator;
+import software.amazon.awssdk.utils.Validate;
 
 public class DefaultIamCondition implements IamCondition {
     private final IamConditionOperator operator;
     private final IamConditionKey key;
-    private final List<String> values;
+    private final String value;
 
     private DefaultIamCondition(Builder builder) {
-        this.operator = builder.operator;
-        this.key = builder.key;
-        this.values = new ArrayList<>(builder.values);
+        this.operator = Validate.paramNotNull(builder.operator, "conditionOperator");
+        this.key = Validate.paramNotNull(builder.key, "conditionKey");
+        this.value = Validate.paramNotNull(builder.value, "conditionValue");
     }
 
     @Override
@@ -46,8 +42,8 @@ public class DefaultIamCondition implements IamCondition {
     }
 
     @Override
-    public List<String> values() {
-        return Collections.unmodifiableList(values);
+    public String value() {
+        return value;
     }
 
     @Override
@@ -58,14 +54,14 @@ public class DefaultIamCondition implements IamCondition {
     public static class Builder implements IamCondition.Builder {
         private IamConditionOperator operator;
         private IamConditionKey key;
-        private final List<String> values = new ArrayList<>();
+        private String value;
         
         public Builder() {}
 
         public Builder(DefaultIamCondition condition) {
             this.operator = condition.operator;
             this.key = condition.key;
-            this.values.addAll(condition.values);
+            this.value = condition.value;
         }
         
         @Override
@@ -93,22 +89,8 @@ public class DefaultIamCondition implements IamCondition {
         }
 
         @Override
-        public IamCondition.Builder values(Collection<String> values) {
-            this.values.clear();
-            this.values.addAll(values);
-            return this;
-        }
-
-        @Override
-        public IamCondition.Builder values(String... values) {
-            this.values.clear();
-            this.values.addAll(Arrays.asList(values));
-            return this;
-        }
-
-        @Override
-        public IamCondition.Builder addValue(String value) {
-            this.values.add(value);
+        public IamCondition.Builder value(String value) {
+            this.value = value;
             return this;
         }
 

@@ -25,8 +25,8 @@ public class DefaultIamPrincipal implements IamPrincipal {
     private final boolean notPrincipal;
 
     private DefaultIamPrincipal(Builder builder) {
-        this.type = Validate.paramNotNull(builder.type, "type");
-        this.id = Validate.paramNotNull(builder.id, "id");
+        this.type = Validate.paramNotNull(builder.type, "principalType");
+        this.id = Validate.paramNotNull(builder.id, "principalId");
         this.notPrincipal = builder.notPrincipal;
     }
 

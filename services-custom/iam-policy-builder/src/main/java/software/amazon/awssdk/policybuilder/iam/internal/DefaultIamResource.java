@@ -16,13 +16,14 @@
 package software.amazon.awssdk.policybuilder.iam.internal;
 
 import software.amazon.awssdk.policybuilder.iam.IamResource;
+import software.amazon.awssdk.utils.Validate;
 
 public class DefaultIamResource implements IamResource {
     private final String value;
     private final boolean notResource;
 
     public DefaultIamResource(Builder builder) {
-        this.value = builder.value;
+        this.value = Validate.paramNotNull(builder.value, "resourceValue");
         this.notResource = builder.notResource;
     }
 
