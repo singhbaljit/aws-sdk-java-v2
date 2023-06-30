@@ -16,6 +16,7 @@
 package software.amazon.awssdk.policybuilder.iam.internal;
 
 import software.amazon.awssdk.policybuilder.iam.IamConditionKey;
+import software.amazon.awssdk.utils.ToString;
 import software.amazon.awssdk.utils.Validate;
 
 public class DefaultIamConditionKey implements IamConditionKey {
@@ -28,5 +29,31 @@ public class DefaultIamConditionKey implements IamConditionKey {
     @Override
     public String value() {
         return value;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        DefaultIamConditionKey that = (DefaultIamConditionKey) o;
+
+        return value.equals(that.value);
+    }
+
+    @Override
+    public int hashCode() {
+        return value.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return ToString.builder("IamConditionKey")
+                       .add("value", value)
+                       .build();
     }
 }

@@ -16,6 +16,7 @@
 package software.amazon.awssdk.policybuilder.iam.internal;
 
 import software.amazon.awssdk.policybuilder.iam.IamResource;
+import software.amazon.awssdk.utils.ToString;
 import software.amazon.awssdk.utils.Validate;
 
 public class DefaultIamResource implements IamResource {
@@ -40,6 +41,38 @@ public class DefaultIamResource implements IamResource {
     @Override
     public IamResource.Builder toBuilder() {
         return new Builder(this);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        DefaultIamResource that = (DefaultIamResource) o;
+
+        if (notResource != that.notResource) {
+            return false;
+        }
+        return value.equals(that.value);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = value.hashCode();
+        result = 31 * result + (notResource ? 1 : 0);
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        return ToString.builder("IamResource")
+                       .add("value", value)
+                       .add("notResource", notResource)
+                       .build();
     }
 
     public static class Builder implements IamResource.Builder {

@@ -17,6 +17,7 @@ package software.amazon.awssdk.policybuilder.iam.internal;
 
 import software.amazon.awssdk.policybuilder.iam.IamPrincipal;
 import software.amazon.awssdk.policybuilder.iam.IamPrincipalType;
+import software.amazon.awssdk.utils.ToString;
 import software.amazon.awssdk.utils.Validate;
 
 public class DefaultIamPrincipal implements IamPrincipal {
@@ -48,6 +49,43 @@ public class DefaultIamPrincipal implements IamPrincipal {
     @Override
     public Builder toBuilder() {
         return new Builder(this);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        DefaultIamPrincipal that = (DefaultIamPrincipal) o;
+
+        if (notPrincipal != that.notPrincipal) {
+            return false;
+        }
+        if (!type.equals(that.type)) {
+            return false;
+        }
+        return id.equals(that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = type.hashCode();
+        result = 31 * result + id.hashCode();
+        result = 31 * result + (notPrincipal ? 1 : 0);
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        return ToString.builder("IamPrincipal")
+                       .add("type", type)
+                       .add("id", id)
+                       .add("notPrincipal", notPrincipal)
+                       .build();
     }
 
     public static class Builder implements IamPrincipal.Builder {

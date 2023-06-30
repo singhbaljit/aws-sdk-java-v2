@@ -64,6 +64,14 @@ public class DefaultIamPolicyWriter implements IamPolicyWriter {
             return;
         }
 
+        if (statements.size() == 1) {
+            appendObjectFieldStart(result, INDENTATION_1, "Statement");
+            appendStatementBody(result, statements.get(0));
+            trimLastLineComma(result);
+            appendObjectFieldEnd(result, INDENTATION_1);
+            return;
+        }
+
         appendArrayFieldStart(result, INDENTATION_1, "Statement");
         statements.forEach(statement -> appendStatement(result, statement));
         trimLastLineComma(result);
@@ -72,14 +80,18 @@ public class DefaultIamPolicyWriter implements IamPolicyWriter {
 
     private void appendStatement(StringBuilder result, IamStatement statement) {
         result.append(INDENTATION_1).append("{\n");
+        appendStatementBody(result, statement);
+        trimLastLineComma(result);
+        result.append(INDENTATION_1).append("},\n");
+    }
+
+    private void appendStatementBody(StringBuilder result, IamStatement statement) {
         appendStringField(result, INDENTATION_2, "Sid", statement.sid());
         appendStringField(result, INDENTATION_2, "Effect", statement.effect());
         appendPrincipals(result, statement.principals());
         appendActions(result, statement.actions());
         appendResources(result, statement.resources());
         appendConditions(result, statement.conditions());
-        trimLastLineComma(result);
-        result.append(INDENTATION_1).append("},\n");
     }
 
     private void appendPrincipals(StringBuilder result, List<IamPrincipal> principals) {
@@ -107,6 +119,8 @@ public class DefaultIamPolicyWriter implements IamPolicyWriter {
 
         appendObjectFieldStart(result, INDENTATION_2, principalKey);
         principals.forEach((principalType, ids) -> {
+
+
             appendArrayField(result, INDENTATION_3, INDENTATION_4, principalType.value(), ids);
         });
         if (!principals.isEmpty()) {
@@ -156,8 +170,6 @@ public class DefaultIamPolicyWriter implements IamPolicyWriter {
                                 .computeIfAbsent(condition.key(), t -> new ArrayList<>())
                                 .add(condition.value());
         });
-
-        System.out.println(aggregatedConditions);
 
         appendObjectFieldStart(result, INDENTATION_2, "Condition");
         aggregatedConditions.forEach((operator, keyValues) -> {

@@ -16,6 +16,7 @@
 package software.amazon.awssdk.policybuilder.iam.internal;
 
 import software.amazon.awssdk.policybuilder.iam.IamPrincipalType;
+import software.amazon.awssdk.utils.ToString;
 import software.amazon.awssdk.utils.Validate;
 
 public class DefaultIamPrincipalType implements IamPrincipalType {
@@ -28,5 +29,31 @@ public class DefaultIamPrincipalType implements IamPrincipalType {
     @Override
     public String value() {
         return value;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        DefaultIamPrincipalType that = (DefaultIamPrincipalType) o;
+
+        return value.equals(that.value);
+    }
+
+    @Override
+    public int hashCode() {
+        return value.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return ToString.builder("IamPrincipalType")
+                       .add("value", value)
+                       .build();
     }
 }

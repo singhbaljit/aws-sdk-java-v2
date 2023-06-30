@@ -22,10 +22,12 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 import software.amazon.awssdk.policybuilder.iam.IamPolicy;
 import software.amazon.awssdk.policybuilder.iam.IamPolicyWriter;
 import software.amazon.awssdk.policybuilder.iam.IamStatement;
+import software.amazon.awssdk.utils.ToString;
 import software.amazon.awssdk.utils.Validate;
 
 public class DefaultIamPolicy implements IamPolicy {
@@ -75,6 +77,48 @@ public class DefaultIamPolicy implements IamPolicy {
     @Override
     public Builder toBuilder() {
         return new Builder(this);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        DefaultIamPolicy that = (DefaultIamPolicy) o;
+
+        if (!Objects.equals(id, that.id)) {
+            return false;
+        }
+        if (!version.equals(that.version)) {
+            return false;
+        }
+        if (!statements.equals(that.statements)) {
+            return false;
+        }
+        return additionalJsonFields.equals(that.additionalJsonFields);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = id != null ? id.hashCode() : 0;
+        result = 31 * result + version.hashCode();
+        result = 31 * result + statements.hashCode();
+        result = 31 * result + additionalJsonFields.hashCode();
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        return ToString.builder("IamPolicy")
+                       .add("id", id)
+                       .add("version", version)
+                       .add("statements", statements)
+                       .add("additionalJsonFields", additionalJsonFields)
+                       .build();
     }
 
     public static class Builder implements IamPolicy.Builder {

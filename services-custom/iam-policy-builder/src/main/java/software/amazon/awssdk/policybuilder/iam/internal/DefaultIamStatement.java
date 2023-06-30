@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 import software.amazon.awssdk.policybuilder.iam.IamAction;
 import software.amazon.awssdk.policybuilder.iam.IamCondition;
@@ -32,6 +33,7 @@ import software.amazon.awssdk.policybuilder.iam.IamPrincipal;
 import software.amazon.awssdk.policybuilder.iam.IamPrincipalType;
 import software.amazon.awssdk.policybuilder.iam.IamResource;
 import software.amazon.awssdk.policybuilder.iam.IamStatement;
+import software.amazon.awssdk.utils.ToString;
 import software.amazon.awssdk.utils.Validate;
 
 public class DefaultIamStatement implements IamStatement {
@@ -91,6 +93,63 @@ public class DefaultIamStatement implements IamStatement {
     @Override
     public IamStatement.Builder toBuilder() {
         return new Builder(this);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        DefaultIamStatement that = (DefaultIamStatement) o;
+
+        if (!Objects.equals(sid, that.sid)) {
+            return false;
+        }
+        if (!effect.equals(that.effect)) {
+            return false;
+        }
+        if (!principals.equals(that.principals)) {
+            return false;
+        }
+        if (!actions.equals(that.actions)) {
+            return false;
+        }
+        if (!resources.equals(that.resources)) {
+            return false;
+        }
+        if (!conditions.equals(that.conditions)) {
+            return false;
+        }
+        return additionalJsonFields.equals(that.additionalJsonFields);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = sid != null ? sid.hashCode() : 0;
+        result = 31 * result + effect.hashCode();
+        result = 31 * result + principals.hashCode();
+        result = 31 * result + actions.hashCode();
+        result = 31 * result + resources.hashCode();
+        result = 31 * result + conditions.hashCode();
+        result = 31 * result + additionalJsonFields.hashCode();
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        return ToString.builder("IamStatement")
+                       .add("sid", sid)
+                       .add("effect", effect)
+                       .add("principals", principals)
+                       .add("actions", actions)
+                       .add("resources", resources)
+                       .add("conditions", conditions)
+                       .add("additionalJsonFields", additionalJsonFields)
+                       .build();
     }
 
     public static class Builder implements IamStatement.Builder {

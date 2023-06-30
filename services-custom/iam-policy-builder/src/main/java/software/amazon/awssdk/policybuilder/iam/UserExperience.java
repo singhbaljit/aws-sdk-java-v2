@@ -33,6 +33,7 @@ public class UserExperience {
                                                .build())
                      .build();
 
+        System.out.println(policy);
         System.out.println(policy.toJson());
     }
 }

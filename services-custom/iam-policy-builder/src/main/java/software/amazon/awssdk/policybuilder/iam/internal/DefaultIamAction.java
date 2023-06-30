@@ -16,6 +16,7 @@
 package software.amazon.awssdk.policybuilder.iam.internal;
 
 import software.amazon.awssdk.policybuilder.iam.IamAction;
+import software.amazon.awssdk.utils.ToString;
 import software.amazon.awssdk.utils.Validate;
 
 public class DefaultIamAction implements IamAction {
@@ -40,6 +41,42 @@ public class DefaultIamAction implements IamAction {
     @Override
     public IamAction.Builder toBuilder() {
         return new Builder(this);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        DefaultIamAction that = (DefaultIamAction) o;
+
+        if (notAction != that.notAction) {
+            return false;
+        }
+        if (!value.equals(that.value)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = value.hashCode();
+        result = 31 * result + (notAction ? 1 : 0);
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        return ToString.builder("IamAction")
+                       .add("value", value)
+                       .add("notAction", notAction)
+                       .build();
     }
 
     public static class Builder implements IamAction.Builder {

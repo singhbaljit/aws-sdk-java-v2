@@ -18,6 +18,7 @@ package software.amazon.awssdk.policybuilder.iam.internal;
 import software.amazon.awssdk.policybuilder.iam.IamCondition;
 import software.amazon.awssdk.policybuilder.iam.IamConditionKey;
 import software.amazon.awssdk.policybuilder.iam.IamConditionOperator;
+import software.amazon.awssdk.utils.ToString;
 import software.amazon.awssdk.utils.Validate;
 
 public class DefaultIamCondition implements IamCondition {
@@ -49,6 +50,43 @@ public class DefaultIamCondition implements IamCondition {
     @Override
     public Builder toBuilder() {
         return new Builder(this);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        DefaultIamCondition that = (DefaultIamCondition) o;
+
+        if (!operator.equals(that.operator)) {
+            return false;
+        }
+        if (!key.equals(that.key)) {
+            return false;
+        }
+        return value.equals(that.value);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = operator.hashCode();
+        result = 31 * result + key.hashCode();
+        result = 31 * result + value.hashCode();
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        return ToString.builder("IamCondition")
+                       .add("operator", operator)
+                       .add("key", key)
+                       .add("value", value)
+                       .build();
     }
 
     public static class Builder implements IamCondition.Builder {
