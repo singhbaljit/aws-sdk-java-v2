@@ -15,12 +15,13 @@
 
 package software.amazon.awssdk.policybuilder.iam;
 
-import java.util.Map;
+import software.amazon.awssdk.policybuilder.iam.internal.DefaultIamPolicyReader;
+import software.amazon.awssdk.utils.builder.ToCopyableBuilder;
 
-public interface IamStructure {
-    Map<String, String> additionalJsonFieldsUnsafe();
-
-    interface Builder<T extends Builder> {
-        T putJsonFieldUnsafe(String key, String json);
+public interface IamPolicyReader {
+    static IamPolicyReader create() {
+        return new DefaultIamPolicyReader();
     }
+
+    IamPolicy read(String policy);
 }

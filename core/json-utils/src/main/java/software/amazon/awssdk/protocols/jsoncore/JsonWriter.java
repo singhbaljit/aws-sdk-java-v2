@@ -20,6 +20,7 @@ import static software.amazon.awssdk.utils.DateUtils.formatUnixTimestampInstant;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
@@ -36,17 +37,17 @@ import software.amazon.awssdk.utils.SdkAutoCloseable;
  */
 @SdkProtectedApi
 public class JsonWriter implements SdkAutoCloseable {
-
     private static final int DEFAULT_BUFFER_SIZE = 1024;
-    private final JsonFactory jsonFactory;
     private final ByteArrayOutputStream baos;
     private final JsonGenerator generator;
 
     private JsonWriter(Builder builder) {
-        jsonFactory = builder.jsonFactory != null ? builder.jsonFactory : DEFAULT_JSON_FACTORY;
+        JsonGeneratorFactory jsonGeneratorFactory = builder.jsonGeneratorFactory != null
+                                                    ? builder.jsonGeneratorFactory
+                                                    : DEFAULT_JSON_FACTORY::createGenerator;
         try {
             baos = new ByteArrayOutputStream(DEFAULT_BUFFER_SIZE);
-            generator = jsonFactory.createGenerator(baos);
+            generator = jsonGeneratorFactory.createGenerator(baos);
         } catch (IOException e) {
             throw new JsonGenerationException(e);
         }
@@ -170,7 +171,7 @@ public class JsonWriter implements SdkAutoCloseable {
      * A builder for configuring and creating {@link JsonWriter}. Created via {@link #builder()}.
      */
     public static final class Builder {
-        private JsonFactory jsonFactory;
+        private JsonGeneratorFactory jsonGeneratorFactory;
 
         private Builder() {
         }
@@ -185,7 +186,12 @@ public class JsonWriter implements SdkAutoCloseable {
          * <p>By default, this is {@link JsonNodeParser#DEFAULT_JSON_FACTORY}.
          */
         public JsonWriter.Builder jsonFactory(JsonFactory jsonFactory) {
-            this.jsonFactory = jsonFactory;
+            jsonGeneratorFactory(jsonFactory::createGenerator);
+            return this;
+        }
+
+        public JsonWriter.Builder jsonGeneratorFactory(JsonGeneratorFactory jsonGeneratorFactory) {
+            this.jsonGeneratorFactory = jsonGeneratorFactory;
             return this;
         }
 
@@ -195,6 +201,11 @@ public class JsonWriter implements SdkAutoCloseable {
         public JsonWriter build() {
             return new JsonWriter(this);
         }
+    }
+
+    @FunctionalInterface
+    public interface JsonGeneratorFactory {
+        JsonGenerator createGenerator(OutputStream outputStream) throws IOException;
     }
 
     /**

@@ -28,11 +28,13 @@ public class DefaultIamConditionOperator implements IamConditionOperator {
 
     @Override
     public IamConditionOperator addPrefix(String prefix) {
+        Validate.paramNotNull(prefix, "prefix");
         return IamConditionOperator.create(prefix + value);
     }
 
     @Override
     public IamConditionOperator addSuffix(String suffix) {
+        Validate.paramNotNull(suffix, "suffix");
         return IamConditionOperator.create(value + suffix);
     }
 

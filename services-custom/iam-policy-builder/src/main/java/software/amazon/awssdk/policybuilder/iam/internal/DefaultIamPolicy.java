@@ -34,14 +34,12 @@ public class DefaultIamPolicy implements IamPolicy {
     private final String id;
     private final String version;
     private final List<IamStatement> statements;
-    private final Map<String, String> additionalJsonFields;
 
     public DefaultIamPolicy(Builder builder) {
         this.id = builder.id;
         this.version = builder.version != null ? builder.version : "2012-10-17";
         this.statements = new ArrayList<>(Validate.notEmpty(builder.statements,
                                                             "At least one policy statement is required."));
-        this.additionalJsonFields = new LinkedHashMap<>(builder.additionalJsonFields);
     }
 
     @Override
@@ -57,11 +55,6 @@ public class DefaultIamPolicy implements IamPolicy {
     @Override
     public List<IamStatement> statements() {
         return Collections.unmodifiableList(statements);
-    }
-
-    @Override
-    public Map<String, String> additionalJsonFieldsUnsafe() {
-        return Collections.unmodifiableMap(additionalJsonFields);
     }
 
     @Override
@@ -99,7 +92,7 @@ public class DefaultIamPolicy implements IamPolicy {
         if (!statements.equals(that.statements)) {
             return false;
         }
-        return additionalJsonFields.equals(that.additionalJsonFields);
+        return true;
     }
 
     @Override
@@ -107,7 +100,6 @@ public class DefaultIamPolicy implements IamPolicy {
         int result = id != null ? id.hashCode() : 0;
         result = 31 * result + version.hashCode();
         result = 31 * result + statements.hashCode();
-        result = 31 * result + additionalJsonFields.hashCode();
         return result;
     }
 
@@ -117,7 +109,6 @@ public class DefaultIamPolicy implements IamPolicy {
                        .add("id", id)
                        .add("version", version)
                        .add("statements", statements.isEmpty() ? null : statements)
-                       .add("additionalJsonFields", additionalJsonFields.isEmpty() ? null : additionalJsonFields)
                        .build();
     }
 
@@ -134,7 +125,6 @@ public class DefaultIamPolicy implements IamPolicy {
             this.id = policy.id;
             this.version = policy.version;
             this.statements.addAll(policy.statements);
-            this.additionalJsonFields.putAll(policy.additionalJsonFields);
         }
 
         @Override
@@ -152,32 +142,23 @@ public class DefaultIamPolicy implements IamPolicy {
         @Override
         public IamPolicy.Builder statements(Collection<IamStatement> statements) {
             this.statements.clear();
-            this.statements.addAll(statements);
-            return this;
-        }
-
-        @Override
-        public IamPolicy.Builder statements(IamStatement... statements) {
-            this.statements.clear();
-            this.statements.addAll(Arrays.asList(statements));
+            if (statements != null) {
+                this.statements.addAll(statements);
+            }
             return this;
         }
 
         @Override
         public IamPolicy.Builder addStatement(IamStatement statement) {
+            Validate.paramNotNull(statement, "statement");
             this.statements.add(statement);
             return this;
         }
 
         @Override
         public IamPolicy.Builder addStatement(Consumer<IamStatement.Builder> statement) {
+            Validate.paramNotNull(statement, "statement");
             this.statements.add(IamStatement.builder().applyMutation(statement).build());
-            return this;
-        }
-
-        @Override
-        public IamPolicy.Builder putJsonFieldUnsafe(String key, String json) {
-            this.additionalJsonFields.put(key, json);
             return this;
         }
 

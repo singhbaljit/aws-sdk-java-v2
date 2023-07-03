@@ -95,7 +95,7 @@ public class DefaultIamPrincipal implements IamPrincipal {
 
         @Override
         public IamPrincipal.Builder type(String type) {
-            this.type = IamPrincipalType.create(type);
+            this.type = type == null ? null : IamPrincipalType.create(type);
             return this;
         }
 

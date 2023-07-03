@@ -15,6 +15,8 @@
 
 package software.amazon.awssdk.policybuilder.iam;
 
+import static java.util.Arrays.asList;
+
 public class UserExperience {
     public static void main(String... args) {
         IamPolicy policy =
@@ -22,20 +24,14 @@ public class UserExperience {
                      .addStatement(IamStatement.builder()
                                                .sid("sid")
                                                .effect(IamEffect.ALLOW)
-
                                                .addPrincipal(IamPrincipal.ALL)
-
                                                .addAction(IamAction.ALL)
                                                .addResource(IamResource.ALL)
-
                                                .addCondition("StringEquals", "aws:PrincipalTag/job-category", "iamuser-admin")
-                                               .addConditions("StringEquals", "aws:PrincipalTag/role", "audit", "finance")
+                                               .addConditions("StringEquals", "aws:PrincipalTag/role", asList("audit", "finance"))
                                                .build())
                      .addStatement(s -> s.effect(IamEffect.DENY)
-                                         .addPrincipal(IamPrincipal.ALL)
-                                         .putJsonFieldUnsafe("AnotherNewKey", "[{\"hello\": 2}]")
-                                         .putJsonFieldUnsafe("AnotherNewKey2", "[{\"goodbye\": 3}]"))
-                     .putJsonFieldUnsafe("NewKey", "1")
+                                         .addPrincipal(IamPrincipal.ALL))
                      .build();
 
         System.out.println(policy);

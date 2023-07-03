@@ -17,13 +17,12 @@ package software.amazon.awssdk.policybuilder.iam;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 import software.amazon.awssdk.policybuilder.iam.internal.DefaultIamStatement;
 import software.amazon.awssdk.utils.builder.CopyableBuilder;
 import software.amazon.awssdk.utils.builder.ToCopyableBuilder;
 
-public interface IamStatement extends ToCopyableBuilder<IamStatement.Builder, IamStatement>, IamStructure {
+public interface IamStatement extends ToCopyableBuilder<IamStatement.Builder, IamStatement> {
     static IamStatement fromJson(String json) {
         // TODO
         return null;
@@ -42,12 +41,12 @@ public interface IamStatement extends ToCopyableBuilder<IamStatement.Builder, Ia
     List<IamResource> resources();
     List<IamResource> notResources();
     List<IamCondition> conditions();
-    Map<String, String> additionalJsonFieldsUnsafe();
 
-    interface Builder extends CopyableBuilder<Builder, IamStatement>, IamStructure.Builder<Builder> {
+    interface Builder extends CopyableBuilder<Builder, IamStatement> {
 
         Builder sid(String sid);
         Builder effect(IamEffect effect);
+        Builder effect(String effect);
 
         Builder principals(Collection<IamPrincipal> principals);
         Builder principals(IamPrincipal... principals);
@@ -64,35 +63,28 @@ public interface IamStatement extends ToCopyableBuilder<IamStatement.Builder, Ia
         Builder addNotPrincipals(String iamPrincipalType, String... principals);
 
         Builder actions(Collection<IamAction> actions);
-        Builder actions(IamAction... actions);
         Builder addAction(IamAction action);
         Builder addAction(String action);
 
         Builder notActions(Collection<IamAction> actions);
-        Builder notActions(IamAction... actions);
         Builder addNotAction(IamAction action);
         Builder addNotAction(String action);
 
         Builder resources(Collection<IamResource> resources);
-        Builder resources(IamResource... resources);
         Builder addResource(IamResource resource);
         Builder addResource(String resource);
 
         Builder notResources(Collection<IamResource> resources);
-        Builder notResources(IamResource... resources);
         Builder addNotResource(IamResource resource);
         Builder addNotResource(String resource);
 
         Builder conditions(Collection<IamCondition> conditions);
-        Builder conditions(IamCondition... conditions);
         Builder addCondition(IamCondition condition);
         Builder addCondition(Consumer<IamCondition.Builder> condition);
         Builder addCondition(IamConditionOperator operator, IamConditionKey key, String value);
         Builder addCondition(String operator, String key, String values);
         Builder addConditions(IamConditionOperator operator, IamConditionKey key, Collection<String> values);
-        Builder addConditions(IamConditionOperator operator, IamConditionKey key, String... values);
         Builder addConditions(String operator, String key, Collection<String> values);
-        Builder addConditions(String operator, String key, String... values);
 
         IamStatement build();
     }
