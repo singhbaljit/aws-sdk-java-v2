@@ -324,6 +324,15 @@ public class DefaultIamStatement implements IamStatement {
         }
 
         @Override
+        public IamStatement.Builder actionStrings(Collection<String> actions) {
+            this.actions.clear();
+            if (actions != null) {
+                actions.forEach(this::addAction);
+            }
+            return this;
+        }
+
+        @Override
         public IamStatement.Builder addAction(IamAction action) {
             Validate.paramNotNull(action, "action");
             this.actions.add(action);
@@ -341,6 +350,15 @@ public class DefaultIamStatement implements IamStatement {
             this.notActions.clear();
             if (notActions != null) {
                 this.notActions.addAll(notActions);
+            }
+            return this;
+        }
+
+        @Override
+        public IamStatement.Builder notActionStrings(Collection<String> notActions) {
+            this.notActions.clear();
+            if (notActions != null) {
+                notActions.forEach(this::addNotAction);
             }
             return this;
         }
@@ -368,6 +386,15 @@ public class DefaultIamStatement implements IamStatement {
         }
 
         @Override
+        public IamStatement.Builder resourceStrings(Collection<String> resources) {
+            this.resources.clear();
+            if (resources != null) {
+                resources.forEach(this::addResource);
+            }
+            return this;
+        }
+
+        @Override
         public IamStatement.Builder addResource(IamResource resource) {
             Validate.paramNotNull(resource, "resource");
             this.resources.add(resource);
@@ -385,6 +412,15 @@ public class DefaultIamStatement implements IamStatement {
             this.notResources.clear();
             if (notResources != null) {
                 this.notResources.addAll(notResources);
+            }
+            return this;
+        }
+
+        @Override
+        public IamStatement.Builder notResourceStrings(Collection<String> notResources) {
+            this.notResources.clear();
+            if (notResources != null) {
+                notResources.forEach(this::addNotResource);
             }
             return this;
         }

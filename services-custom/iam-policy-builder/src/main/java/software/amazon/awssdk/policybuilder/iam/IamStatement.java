@@ -63,18 +63,22 @@ public interface IamStatement extends ToCopyableBuilder<IamStatement.Builder, Ia
         Builder addNotPrincipals(String iamPrincipalType, String... principals);
 
         Builder actions(Collection<IamAction> actions);
+        Builder actionStrings(Collection<String> actions);
         Builder addAction(IamAction action);
         Builder addAction(String action);
 
         Builder notActions(Collection<IamAction> actions);
+        Builder notActionStrings(Collection<String> actions);
         Builder addNotAction(IamAction action);
         Builder addNotAction(String action);
 
         Builder resources(Collection<IamResource> resources);
+        Builder resourceStrings(Collection<String> resources);
         Builder addResource(IamResource resource);
         Builder addResource(String resource);
 
         Builder notResources(Collection<IamResource> resources);
+        Builder notResourceStrings(Collection<String> resources);
         Builder addNotResource(IamResource resource);
         Builder addNotResource(String resource);
 

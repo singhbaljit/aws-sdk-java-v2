@@ -18,9 +18,11 @@ package software.amazon.awssdk.policybuilder.iam.internal;
 import static java.util.Collections.singletonList;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import software.amazon.awssdk.policybuilder.iam.IamCondition;
 import software.amazon.awssdk.policybuilder.iam.IamPolicy;
 import software.amazon.awssdk.policybuilder.iam.IamPolicyReader;
 import software.amazon.awssdk.policybuilder.iam.IamPrincipal;
@@ -56,7 +58,11 @@ public class DefaultIamPolicyReader implements IamPolicyReader {
         }
 
         if (statementsNode.isArray()) {
-            return readStatementsArray(statementsNode.asArray());
+            return statementsNode.asArray()
+                                 .stream()
+                                 .map(n -> expectObject(n, "Statement entry"))
+                                 .map(this::readStatement)
+                                 .collect(Collectors.toList());
         }
 
         if (statementsNode.isObject()) {
@@ -66,13 +72,6 @@ public class DefaultIamPolicyReader implements IamPolicyReader {
         throw new IllegalArgumentException("Statement was not an array or object.");
     }
 
-    private List<IamStatement> readStatementsArray(List<JsonNode> statements) {
-        return statements.stream()
-                         .map(n -> expectObject(n, "Statement entry"))
-                         .map(this::readStatement)
-                         .collect(Collectors.toList());
-    }
-
     private IamStatement readStatement(Map<String, JsonNode> statementObject) {
         IamStatement.Builder statement = IamStatement.builder();
 
@@ -80,17 +79,11 @@ public class DefaultIamPolicyReader implements IamPolicyReader {
         statement.effect(getString(statementObject, "Effect"));
         statement.principals(readPrincipals(statementObject, "Principal")); // TODO: setting varargs should be at least one.
         statement.notPrincipals(readPrincipals(statementObject, "NotPrincipal"));
-
-        // writeFieldIfNotNull(writer, "Sid", statement.sid());
-        // writeFieldIfNotNull(writer, "Effect", statement.effect());
-        // writePrincipals(writer, "Principal", statement.principals());
-        // writePrincipals(writer, "NotPrincipal", statement.notPrincipals());
-        // writeValueArrayField(writer, "Action", statement.actions());
-        // writeValueArrayField(writer, "NotAction", statement.notActions());
-        // writeValueArrayField(writer, "Resource", statement.actions());
-        // writeValueArrayField(writer, "NotResource", statement.notResources());
-        // writeConditions(writer, statement.conditions());
-
+        statement.actionStrings(readStringArray(statementObject, "Action"));
+        statement.notActionStrings(readStringArray(statementObject, "NotAction"));
+        statement.resourceStrings(readStringArray(statementObject, "Resource"));
+        statement.notResourceStrings(readStringArray(statementObject, "NotResource"));
+        statement.conditions(readConditions(statementObject.get("Condition")));
     }
 
     private List<IamPrincipal> readPrincipals(Map<String, JsonNode> statementObject, String name) {
@@ -107,12 +100,37 @@ public class DefaultIamPolicyReader implements IamPolicyReader {
         if (principalsNode.isObject()) {
             List<IamPrincipal> result = new ArrayList<>();
             principalsNode.asObject().forEach((id, value) -> {
-                result.add(IamPrincipal.create(id, expectString(value, name + " value")));
+                result.add(IamPrincipal.create(id, expectString(value, name + " entry value")));
             });
             return result;
         }
 
         throw new IllegalArgumentException(name + " was not \"" + IamPrincipal.ALL.id() + "\" or an object");
+    }
+
+    private Collection<IamCondition> readConditions(JsonNode conditionNode) {
+        return null;
+    }
+
+    private List<String> readStringArray(Map<String, JsonNode> statementObject, String nodeKey) {
+        JsonNode node = statementObject.get(nodeKey);
+
+        if (node == null) {
+            return null;
+        }
+
+        if (node.isString()) {
+            return singletonList(node.asString());
+        }
+
+        if (node.isArray()) {
+            return node.asArray()
+                             .stream()
+                             .map(n -> expectString(n, nodeKey + " entry"))
+                             .collect(Collectors.toList());
+        }
+
+        throw new IllegalArgumentException(nodeKey + " was not an array or string.");
     }
 
     private String getString(Map<String, JsonNode> object, String key) {
