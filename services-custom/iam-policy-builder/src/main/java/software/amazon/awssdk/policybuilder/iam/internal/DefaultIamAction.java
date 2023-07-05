@@ -15,12 +15,13 @@
 
 package software.amazon.awssdk.policybuilder.iam.internal;
 
+import software.amazon.awssdk.annotations.NotNull;
 import software.amazon.awssdk.policybuilder.iam.IamAction;
 import software.amazon.awssdk.utils.ToString;
 import software.amazon.awssdk.utils.Validate;
 
-public class DefaultIamAction implements IamAction {
-    private final String value;
+public final class DefaultIamAction implements IamAction {
+    @NotNull private final String value;
 
     public DefaultIamAction(String value) {
         this.value = Validate.paramNotNull(value, "actionValue");

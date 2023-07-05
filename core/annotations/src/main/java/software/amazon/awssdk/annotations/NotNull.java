@@ -13,17 +13,21 @@
  * permissions and limitations under the License.
  */
 
-package software.amazon.awssdk.policybuilder.iam;
+package software.amazon.awssdk.annotations;
 
-import java.io.InputStream;
-import software.amazon.awssdk.policybuilder.iam.internal.DefaultIamPolicyReader;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-public interface IamPolicyReader {
-    static IamPolicyReader create() {
-        return new DefaultIamPolicyReader();
-    }
-
-    IamPolicy read(String policy);
-    IamPolicy read(InputStream policy);
-    IamPolicy read(byte[] policy);
+@Documented
+@Target({ElementType.METHOD,
+         ElementType.FIELD,
+         ElementType.ANNOTATION_TYPE,
+         ElementType.CONSTRUCTOR,
+         ElementType.PARAMETER})
+@Retention(RetentionPolicy.CLASS)
+@SdkProtectedApi
+public @interface NotNull {
 }

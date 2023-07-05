@@ -15,15 +15,41 @@
 
 package software.amazon.awssdk.policybuilder.iam;
 
-import java.io.InputStream;
-import software.amazon.awssdk.policybuilder.iam.internal.DefaultIamPolicyReader;
+import static org.junit.jupiter.api.Assertions.*;
 
-public interface IamPolicyReader {
-    static IamPolicyReader create() {
-        return new DefaultIamPolicyReader();
+import org.junit.jupiter.api.Test;
+
+class IamPolicyTest {
+    @Test
+    void fromJson_delegatesToIamPolicyReader() {
+        IamPolicy iamPolicy = IamPolicy.fromJson("{}");
     }
 
-    IamPolicy read(String policy);
-    IamPolicy read(InputStream policy);
-    IamPolicy read(byte[] policy);
+    @Test
+    void create() {
+    }
+
+    @Test
+    void builder() {
+    }
+
+    @Test
+    void id() {
+    }
+
+    @Test
+    void version() {
+    }
+
+    @Test
+    void statements() {
+    }
+
+    @Test
+    void toJson() {
+    }
+
+    @Test
+    void testToJson() {
+    }
 }

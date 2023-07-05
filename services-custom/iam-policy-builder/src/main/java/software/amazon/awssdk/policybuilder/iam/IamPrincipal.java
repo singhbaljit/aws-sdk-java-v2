@@ -15,12 +15,17 @@
 
 package software.amazon.awssdk.policybuilder.iam;
 
+import static java.util.Collections.emptyList;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
 import software.amazon.awssdk.policybuilder.iam.internal.DefaultIamPrincipal;
 import software.amazon.awssdk.utils.builder.CopyableBuilder;
 import software.amazon.awssdk.utils.builder.ToCopyableBuilder;
 
 public interface IamPrincipal extends ToCopyableBuilder<IamPrincipal.Builder, IamPrincipal> {
-    IamPrincipal ALL = create("*", "*");
+    IamPrincipal ALL = create("AWS", "*");
 
     static IamPrincipal create(IamPrincipalType principalType, String principalId) {
         return builder().type(principalType).id(principalId).build();
@@ -28,6 +33,24 @@ public interface IamPrincipal extends ToCopyableBuilder<IamPrincipal.Builder, Ia
 
     static IamPrincipal create(String principalType, String principalId) {
         return builder().type(principalType).id(principalId).build();
+    }
+
+    static List<IamPrincipal> createAll(IamPrincipalType principalType, Collection<String> principalIds) {
+        if (principalIds == null) {
+            return emptyList();
+        }
+        return principalIds.stream()
+                           .map(principalId -> create(principalType, principalId))
+                           .collect(Collectors.toList());
+    }
+
+    static List<IamPrincipal> createAll(String principalType, Collection<String> principalIds) {
+        if (principalIds == null) {
+            return emptyList();
+        }
+        return principalIds.stream()
+                           .map(principalId -> create(principalType, principalId))
+                           .collect(Collectors.toList());
     }
 
     static Builder builder() {

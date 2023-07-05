@@ -23,11 +23,10 @@ import software.amazon.awssdk.utils.builder.ToCopyableBuilder;
 
 public interface IamPolicy extends ToCopyableBuilder<IamPolicy.Builder, IamPolicy> {
     static IamPolicy fromJson(String json) {
-        // TODO
-        return null;
+        return IamPolicyReader.create().read(json);
     }
 
-    static IamPolicy fromStatements(Collection<IamStatement> statements) {
+    static IamPolicy create(Collection<IamStatement> statements) {
         return builder().statements(statements).build();
     }
 

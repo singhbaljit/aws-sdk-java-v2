@@ -16,12 +16,12 @@
 package software.amazon.awssdk.policybuilder.iam.internal;
 
 import static java.util.Collections.singletonList;
+import static java.util.stream.Collectors.toList;
 
+import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import software.amazon.awssdk.policybuilder.iam.IamCondition;
 import software.amazon.awssdk.policybuilder.iam.IamPolicy;
 import software.amazon.awssdk.policybuilder.iam.IamPolicyReader;
@@ -31,25 +31,49 @@ import software.amazon.awssdk.protocols.jsoncore.JsonNode;
 import software.amazon.awssdk.protocols.jsoncore.JsonNodeParser;
 import software.amazon.awssdk.utils.Validate;
 
-public class DefaultIamPolicyReader implements IamPolicyReader {
+public final class DefaultIamPolicyReader implements IamPolicyReader {
     private static final JsonNodeParser JSON_NODE_PARSER = JsonNodeParser.create();
 
     @Override
-    public IamPolicy read(String policyString) {
-        JsonNode jsonNode = JSON_NODE_PARSER.parse(policyString);
-        return readPolicy(jsonNode);
+    public IamPolicy read(String policy) {
+        return readPolicy(JSON_NODE_PARSER.parse(policy));
+    }
+
+    @Override
+    public IamPolicy read(byte[] policy) {
+        return readPolicy(JSON_NODE_PARSER.parse(policy));
+    }
+
+    @Override
+    public IamPolicy read(InputStream policy) {
+        return readPolicy(JSON_NODE_PARSER.parse(policy));
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return 0;
     }
 
     private IamPolicy readPolicy(JsonNode policyNode) {
         Map<String, JsonNode> policyObject = expectObject(policyNode, "Policy did not start with {");
 
-        IamPolicy.Builder policy = IamPolicy.builder();
-
-        policy.version(getString(policyObject, "Version"));
-        policy.id(getString(policyObject, "Id"));
-        policy.statements(readStatements(policyObject.get("Statement")));
-
-        return policy.build();
+        return IamPolicy.builder()
+                        .version(getString(policyObject, "Version"))
+                        .id(getString(policyObject, "Id"))
+                        .statements(readStatements(policyObject.get("Statement")))
+                        .build();
     }
 
     private List<IamStatement> readStatements(JsonNode statementsNode) {
@@ -62,7 +86,7 @@ public class DefaultIamPolicyReader implements IamPolicyReader {
                                  .stream()
                                  .map(n -> expectObject(n, "Statement entry"))
                                  .map(this::readStatement)
-                                 .collect(Collectors.toList());
+                                 .collect(toList());
         }
 
         if (statementsNode.isObject()) {
@@ -73,17 +97,17 @@ public class DefaultIamPolicyReader implements IamPolicyReader {
     }
 
     private IamStatement readStatement(Map<String, JsonNode> statementObject) {
-        IamStatement.Builder statement = IamStatement.builder();
-
-        statement.sid(getString(statementObject, "Sid"));
-        statement.effect(getString(statementObject, "Effect"));
-        statement.principals(readPrincipals(statementObject, "Principal")); // TODO: setting varargs should be at least one.
-        statement.notPrincipals(readPrincipals(statementObject, "NotPrincipal"));
-        statement.actionStrings(readStringArray(statementObject, "Action"));
-        statement.notActionStrings(readStringArray(statementObject, "NotAction"));
-        statement.resourceStrings(readStringArray(statementObject, "Resource"));
-        statement.notResourceStrings(readStringArray(statementObject, "NotResource"));
-        statement.conditions(readConditions(statementObject.get("Condition")));
+        return IamStatement.builder()
+                           .sid(getString(statementObject, "Sid"))
+                           .effect(getString(statementObject, "Effect"))
+                           .principals(readPrincipals(statementObject, "Principal"))
+                           .notPrincipals(readPrincipals(statementObject, "NotPrincipal"))
+                           .actionStrings(readStringArray(statementObject, "Action"))
+                           .notActionStrings(readStringArray(statementObject, "NotAction"))
+                           .resourceStrings(readStringArray(statementObject, "Resource"))
+                           .notResourceStrings(readStringArray(statementObject, "NotResource"))
+                           .conditions(readConditions(statementObject.get("Condition")))
+                           .build();
     }
 
     private List<IamPrincipal> readPrincipals(Map<String, JsonNode> statementObject, String name) {
@@ -108,8 +132,33 @@ public class DefaultIamPolicyReader implements IamPolicyReader {
         throw new IllegalArgumentException(name + " was not \"" + IamPrincipal.ALL.id() + "\" or an object");
     }
 
-    private Collection<IamCondition> readConditions(JsonNode conditionNode) {
-        return null;
+    private List<IamCondition> readConditions(JsonNode conditionNode) {
+        if (conditionNode == null) {
+            return null;
+        }
+
+        Map<String, JsonNode> conditionObject = expectObject(conditionNode, "Condition");
+
+        List<IamCondition> result = new ArrayList<>();
+
+        conditionObject.forEach((operator, keyValueNode) -> {
+            Map<String, JsonNode> keyValueObject = expectObject(keyValueNode, "Condition key");
+            keyValueObject.forEach((key, value) -> {
+                if (value.isString()) {
+                    result.add(IamCondition.create(operator, key, value.asString()));
+                } else if (value.isArray()) {
+                    List<String> values =
+                        value.asArray()
+                             .stream()
+                             .map(valueNode -> expectString(valueNode, "Condition values entry"))
+                             .collect(toList());
+                    result.addAll(IamCondition.createAll(operator, key, values));
+                }
+            });
+
+        });
+
+        return result;
     }
 
     private List<String> readStringArray(Map<String, JsonNode> statementObject, String nodeKey) {
@@ -125,12 +174,12 @@ public class DefaultIamPolicyReader implements IamPolicyReader {
 
         if (node.isArray()) {
             return node.asArray()
-                             .stream()
-                             .map(n -> expectString(n, nodeKey + " entry"))
-                             .collect(Collectors.toList());
+                       .stream()
+                       .map(n -> expectString(n, nodeKey + " entry"))
+                       .collect(toList());
         }
 
-        throw new IllegalArgumentException(nodeKey + " was not an array or string.");
+        throw new IllegalArgumentException(nodeKey + " was not an array or string");
     }
 
     private String getString(Map<String, JsonNode> object, String key) {

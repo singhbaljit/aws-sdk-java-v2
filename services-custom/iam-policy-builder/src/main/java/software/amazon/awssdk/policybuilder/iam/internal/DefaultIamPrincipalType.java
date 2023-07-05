@@ -15,12 +15,13 @@
 
 package software.amazon.awssdk.policybuilder.iam.internal;
 
+import software.amazon.awssdk.annotations.NotNull;
 import software.amazon.awssdk.policybuilder.iam.IamPrincipalType;
 import software.amazon.awssdk.utils.ToString;
 import software.amazon.awssdk.utils.Validate;
 
-public class DefaultIamPrincipalType implements IamPrincipalType {
-    private final String value;
+public final class DefaultIamPrincipalType implements IamPrincipalType {
+    @NotNull private final String value;
 
     public DefaultIamPrincipalType(String value) {
         this.value = Validate.paramNotNull(value, "principalTypeValue");

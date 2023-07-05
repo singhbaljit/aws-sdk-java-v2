@@ -15,14 +15,15 @@
 
 package software.amazon.awssdk.policybuilder.iam.internal;
 
+import software.amazon.awssdk.annotations.NotNull;
 import software.amazon.awssdk.policybuilder.iam.IamPrincipal;
 import software.amazon.awssdk.policybuilder.iam.IamPrincipalType;
 import software.amazon.awssdk.utils.ToString;
 import software.amazon.awssdk.utils.Validate;
 
-public class DefaultIamPrincipal implements IamPrincipal {
-    private final IamPrincipalType type;
-    private final String id;
+public final class DefaultIamPrincipal implements IamPrincipal {
+    @NotNull private final IamPrincipalType type;
+    @NotNull private final String id;
 
     private DefaultIamPrincipal(Builder builder) {
         this.type = Validate.paramNotNull(builder.type, "principalType");

@@ -16,7 +16,6 @@
 package software.amazon.awssdk.policybuilder.iam.internal;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -24,16 +23,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
+import software.amazon.awssdk.annotations.NotNull;
 import software.amazon.awssdk.policybuilder.iam.IamPolicy;
 import software.amazon.awssdk.policybuilder.iam.IamPolicyWriter;
 import software.amazon.awssdk.policybuilder.iam.IamStatement;
 import software.amazon.awssdk.utils.ToString;
 import software.amazon.awssdk.utils.Validate;
 
-public class DefaultIamPolicy implements IamPolicy {
+public final class DefaultIamPolicy implements IamPolicy {
     private final String id;
-    private final String version;
-    private final List<IamStatement> statements;
+    @NotNull private final String version;
+    @NotNull private final List<IamStatement> statements;
 
     public DefaultIamPolicy(Builder builder) {
         this.id = builder.id;
@@ -64,7 +64,7 @@ public class DefaultIamPolicy implements IamPolicy {
 
     @Override
     public String toJson(IamPolicyWriter writer) {
-        return writer.write(this);
+        return writer.writeToString(this);
     }
 
     @Override

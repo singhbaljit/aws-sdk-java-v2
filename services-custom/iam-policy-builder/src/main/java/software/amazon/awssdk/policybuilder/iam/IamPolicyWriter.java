@@ -28,7 +28,8 @@ public interface IamPolicyWriter extends ToCopyableBuilder<IamPolicyWriter.Build
         return new DefaultIamPolicyWriter.Builder();
     }
 
-    String write(IamPolicy policy);
+    String writeToString(IamPolicy policy);
+    byte[] writeToBytes(IamPolicy policy);
 
     interface Builder extends CopyableBuilder<Builder, IamPolicyWriter> {
         Builder prettyPrint(Boolean prettyPrint);

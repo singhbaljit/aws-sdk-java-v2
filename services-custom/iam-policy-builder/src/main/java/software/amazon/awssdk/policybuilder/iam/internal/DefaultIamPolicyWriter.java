@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import software.amazon.awssdk.annotations.NotNull;
 import software.amazon.awssdk.policybuilder.iam.IamCondition;
 import software.amazon.awssdk.policybuilder.iam.IamConditionKey;
 import software.amazon.awssdk.policybuilder.iam.IamConditionOperator;
@@ -34,11 +36,11 @@ import software.amazon.awssdk.protocols.jsoncore.JsonWriter;
 import software.amazon.awssdk.protocols.jsoncore.JsonWriter.JsonGeneratorFactory;
 import software.amazon.awssdk.thirdparty.jackson.core.JsonGenerator;
 
-public class DefaultIamPolicyWriter implements IamPolicyWriter {
+public final class DefaultIamPolicyWriter implements IamPolicyWriter {
     private static final IamPolicyWriter INSTANCE = IamPolicyWriter.builder().build();
 
     private final Boolean prettyPrint;
-    private final JsonGeneratorFactory jsonGeneratorFactory;
+    @NotNull private final transient JsonGeneratorFactory jsonGeneratorFactory;
 
     public static IamPolicyWriter create() {
         return INSTANCE;
@@ -58,7 +60,35 @@ public class DefaultIamPolicyWriter implements IamPolicyWriter {
     }
 
     @Override
-    public String write(IamPolicy policy) {
+    public String writeToString(IamPolicy policy) {
+        return new String(writePolicy(policy).getBytes(), StandardCharsets.UTF_8);
+    }
+
+    @Override
+    public byte[] writeToBytes(IamPolicy policy) {
+        return writePolicy(policy).getBytes();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        DefaultIamPolicyWriter that = (DefaultIamPolicyWriter) o;
+
+        return Objects.equals(prettyPrint, that.prettyPrint);
+    }
+
+    @Override
+    public int hashCode() {
+        return prettyPrint != null ? prettyPrint.hashCode() : 0;
+    }
+
+    private JsonWriter writePolicy(IamPolicy policy) {
         JsonWriter writer =
             JsonWriter.builder()
                       .jsonGeneratorFactory(jsonGeneratorFactory)
@@ -71,8 +101,7 @@ public class DefaultIamPolicyWriter implements IamPolicyWriter {
         writeStatements(writer, policy.statements());
 
         writer.writeEndObject();
-
-        return new String(writer.getBytes(), StandardCharsets.UTF_8);
+        return writer;
     }
 
     private void writeStatements(JsonWriter writer, List<IamStatement> statements) {

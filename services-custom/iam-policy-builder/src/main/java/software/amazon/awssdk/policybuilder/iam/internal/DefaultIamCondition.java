@@ -15,16 +15,17 @@
 
 package software.amazon.awssdk.policybuilder.iam.internal;
 
+import software.amazon.awssdk.annotations.NotNull;
 import software.amazon.awssdk.policybuilder.iam.IamCondition;
 import software.amazon.awssdk.policybuilder.iam.IamConditionKey;
 import software.amazon.awssdk.policybuilder.iam.IamConditionOperator;
 import software.amazon.awssdk.utils.ToString;
 import software.amazon.awssdk.utils.Validate;
 
-public class DefaultIamCondition implements IamCondition {
-    private final IamConditionOperator operator;
-    private final IamConditionKey key;
-    private final String value;
+public final class DefaultIamCondition implements IamCondition {
+    @NotNull private final IamConditionOperator operator;
+    @NotNull private final IamConditionKey key;
+    @NotNull private final String value;
 
     private DefaultIamCondition(Builder builder) {
         this.operator = Validate.paramNotNull(builder.operator, "conditionOperator");

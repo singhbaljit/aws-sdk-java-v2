@@ -15,12 +15,13 @@
 
 package software.amazon.awssdk.policybuilder.iam.internal;
 
+import software.amazon.awssdk.annotations.NotNull;
 import software.amazon.awssdk.policybuilder.iam.IamConditionOperator;
 import software.amazon.awssdk.utils.ToString;
 import software.amazon.awssdk.utils.Validate;
 
-public class DefaultIamConditionOperator implements IamConditionOperator {
-    private final String value;
+public final class DefaultIamConditionOperator implements IamConditionOperator {
+    @NotNull private final String value;
 
     public DefaultIamConditionOperator(String value) {
         this.value = Validate.paramNotNull(value, "conditionOperatorValue");

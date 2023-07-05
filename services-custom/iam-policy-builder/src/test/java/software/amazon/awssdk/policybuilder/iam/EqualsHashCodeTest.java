@@ -15,15 +15,14 @@
 
 package software.amazon.awssdk.policybuilder.iam;
 
-import java.io.InputStream;
-import software.amazon.awssdk.policybuilder.iam.internal.DefaultIamPolicyReader;
+import nl.jqno.equalsverifier.EqualsVerifier;
+import org.junit.jupiter.api.Test;
 
-public interface IamPolicyReader {
-    static IamPolicyReader create() {
-        return new DefaultIamPolicyReader();
+public class EqualsHashCodeTest {
+    @Test
+    public void allClasses_equalsHashCode_isCorrect() {
+        EqualsVerifier.forPackage("software.amazon.awssdk.policybuilder.iam", true)
+                      .except(c -> c.isMemberClass() || c.isAnonymousClass())
+                      .verify();
     }
-
-    IamPolicy read(String policy);
-    IamPolicy read(InputStream policy);
-    IamPolicy read(byte[] policy);
 }

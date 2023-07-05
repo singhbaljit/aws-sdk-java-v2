@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
+import software.amazon.awssdk.annotations.NotNull;
 import software.amazon.awssdk.policybuilder.iam.IamAction;
 import software.amazon.awssdk.policybuilder.iam.IamCondition;
 import software.amazon.awssdk.policybuilder.iam.IamConditionKey;
@@ -34,16 +35,16 @@ import software.amazon.awssdk.policybuilder.iam.IamStatement;
 import software.amazon.awssdk.utils.ToString;
 import software.amazon.awssdk.utils.Validate;
 
-public class DefaultIamStatement implements IamStatement {
+public final class DefaultIamStatement implements IamStatement {
     private final String sid;
-    private final IamEffect effect;
-    private final List<IamPrincipal> principals;
-    private final List<IamPrincipal> notPrincipals;
-    private final List<IamAction> actions;
-    private final List<IamAction> notActions;
-    private final List<IamResource> resources;
-    private final List<IamResource> notResources;
-    private final List<IamCondition> conditions;
+    @NotNull private final IamEffect effect;
+    @NotNull private final List<IamPrincipal> principals;
+    @NotNull private final List<IamPrincipal> notPrincipals;
+    @NotNull private final List<IamAction> actions;
+    @NotNull private final List<IamAction> notActions;
+    @NotNull private final List<IamResource> resources;
+    @NotNull private final List<IamResource> notResources;
+    @NotNull private final List<IamCondition> conditions;
 
     public DefaultIamStatement(Builder builder) {
         this.sid = builder.sid;

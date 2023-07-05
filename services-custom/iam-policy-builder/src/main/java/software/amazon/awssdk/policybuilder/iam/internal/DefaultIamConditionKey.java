@@ -15,12 +15,13 @@
 
 package software.amazon.awssdk.policybuilder.iam.internal;
 
+import software.amazon.awssdk.annotations.NotNull;
 import software.amazon.awssdk.policybuilder.iam.IamConditionKey;
 import software.amazon.awssdk.utils.ToString;
 import software.amazon.awssdk.utils.Validate;
 
-public class DefaultIamConditionKey implements IamConditionKey {
-    private final String value;
+public final class DefaultIamConditionKey implements IamConditionKey {
+    @NotNull private final String value;
 
     public DefaultIamConditionKey(String value) {
         this.value = Validate.paramNotNull(value, "conditionKeyValue");

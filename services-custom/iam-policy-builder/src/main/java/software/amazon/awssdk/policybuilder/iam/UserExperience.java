@@ -35,7 +35,12 @@ public class UserExperience {
                      .build();
 
         System.out.println(policy);
-        System.out.println(policy.toJson());
-        System.out.println(IamPolicyWriter.builder().prettyPrint(true).build().write(policy));
+        String uglyJson = policy.toJson();
+        System.out.println(uglyJson);
+        String prettyJson = IamPolicyWriter.builder().prettyPrint(true).build().writeToString(policy);
+        System.out.println(prettyJson);
+
+        System.out.println(IamPolicy.fromJson(uglyJson));
+        System.out.println(IamPolicy.fromJson(prettyJson));
     }
 }

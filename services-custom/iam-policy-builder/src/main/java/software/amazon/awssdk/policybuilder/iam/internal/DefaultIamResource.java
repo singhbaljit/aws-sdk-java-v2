@@ -15,12 +15,13 @@
 
 package software.amazon.awssdk.policybuilder.iam.internal;
 
+import software.amazon.awssdk.annotations.NotNull;
 import software.amazon.awssdk.policybuilder.iam.IamResource;
 import software.amazon.awssdk.utils.ToString;
 import software.amazon.awssdk.utils.Validate;
 
-public class DefaultIamResource implements IamResource {
-    private final String value;
+public final class DefaultIamResource implements IamResource {
+    @NotNull private final String value;
 
     public DefaultIamResource(String value) {
         this.value = Validate.paramNotNull(value, "resourceValue");

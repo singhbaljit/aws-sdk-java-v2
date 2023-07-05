@@ -16,6 +16,7 @@
 package software.amazon.awssdk.utils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -45,6 +46,14 @@ public final class CollectionUtils {
 
     public static boolean isNotEmpty(Map<?, ?> map) {
         return map != null && !map.isEmpty();
+    }
+
+    @SafeVarargs
+    public static <T> List<T> listOf(T first, T... next) {
+        List<T> result = new ArrayList<>(next.length + 1);
+        result.add(first);
+        result.addAll(Arrays.asList(next));
+        return result;
     }
 
     /**
@@ -193,4 +202,5 @@ public final class CollectionUtils {
         }
         return map;
     }
+
 }

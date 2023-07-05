@@ -15,6 +15,11 @@
 
 package software.amazon.awssdk.policybuilder.iam;
 
+import static java.util.Collections.emptyList;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
 import software.amazon.awssdk.policybuilder.iam.internal.DefaultIamCondition;
 import software.amazon.awssdk.utils.builder.CopyableBuilder;
 import software.amazon.awssdk.utils.builder.ToCopyableBuilder;
@@ -30,6 +35,21 @@ public interface IamCondition extends ToCopyableBuilder<IamCondition.Builder, Ia
 
     static IamCondition create(String operator, String key, String value) {
         return builder().operator(operator).key(key).value(value).build();
+    }
+
+    static List<IamCondition> createAll(IamConditionOperator operator, IamConditionKey key, Collection<String> values) {
+        if (values == null) {
+            return emptyList();
+        }
+        return values.stream().map(value -> create(operator, key, value)).collect(Collectors.toList());
+    }
+
+    static List<IamCondition> createAll(String operator, String key, Collection<String> values) {
+        if (values == null) {
+            return emptyList();
+        }
+
+        return values.stream().map(value -> create(operator, key, value)).collect(Collectors.toList());
     }
 
     IamConditionOperator operator();
