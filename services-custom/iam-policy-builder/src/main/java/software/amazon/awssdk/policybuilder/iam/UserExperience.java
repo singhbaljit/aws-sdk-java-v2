@@ -175,6 +175,7 @@ public class UserExperience {
         // 2. Support for NotPrincipals and NotActions
         // 3. Enums for global condition operators
         // 4. Easier to specify actions and other properties using strings (previously required custom classes)
+        // 5. Can write/read JSON from strings, byte arrays and streams instead of just strings
 
 
 
@@ -187,5 +188,6 @@ public class UserExperience {
         // Remaining work:
         // Javadoc!
         // Tests!
+        // Migration Guide!
     }
 }
