@@ -16,7 +16,6 @@
 package software.amazon.awssdk.policybuilder.iam.internal;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -233,15 +232,6 @@ public final class DefaultIamStatement implements IamStatement {
         }
 
         @Override
-        public IamStatement.Builder principals(IamPrincipal... principals) {
-            this.principals.clear();
-            if (principals != null) {
-                this.principals.addAll(Arrays.asList(principals));
-            }
-            return this;
-        }
-
-        @Override
         public IamStatement.Builder addPrincipal(IamPrincipal principal) {
             Validate.paramNotNull(principal, "principal");
             this.principals.add(principal);
@@ -256,7 +246,17 @@ public final class DefaultIamStatement implements IamStatement {
         }
 
         @Override
-        public IamStatement.Builder addPrincipals(IamPrincipalType principalType, String... principals) {
+        public IamStatement.Builder addPrincipal(IamPrincipalType iamPrincipalType, String principal) {
+            return addPrincipal(IamPrincipal.create(iamPrincipalType, principal));
+        }
+
+        @Override
+        public IamStatement.Builder addPrincipal(String iamPrincipalType, String principal) {
+            return addPrincipal(IamPrincipal.create(iamPrincipalType, principal));
+        }
+
+        @Override
+        public IamStatement.Builder addPrincipals(IamPrincipalType principalType, Collection<String> principals) {
             Validate.paramNotNull(principalType, "principals");
             for (String principal : principals) {
                 this.principals.add(IamPrincipal.create(principalType, principal));
@@ -265,7 +265,7 @@ public final class DefaultIamStatement implements IamStatement {
         }
 
         @Override
-        public IamStatement.Builder addPrincipals(String principalType, String... principals) {
+        public IamStatement.Builder addPrincipals(String principalType, Collection<String> principals) {
             return addPrincipals(IamPrincipalType.create(principalType), principals);
         }
 
@@ -274,15 +274,6 @@ public final class DefaultIamStatement implements IamStatement {
             this.notPrincipals.clear();
             if (notPrincipals != null) {
                 this.notPrincipals.addAll(notPrincipals);
-            }
-            return this;
-        }
-
-        @Override
-        public IamStatement.Builder notPrincipals(IamPrincipal... notPrincipals) {
-            this.notPrincipals.clear();
-            if (notPrincipals != null) {
-                this.notPrincipals.addAll(Arrays.asList(notPrincipals));
             }
             return this;
         }
@@ -302,7 +293,17 @@ public final class DefaultIamStatement implements IamStatement {
         }
 
         @Override
-        public IamStatement.Builder addNotPrincipals(IamPrincipalType notPrincipalType, String... notPrincipals) {
+        public IamStatement.Builder addNotPrincipal(IamPrincipalType iamPrincipalType, String principal) {
+            return addNotPrincipal(IamPrincipal.create(iamPrincipalType, principal));
+        }
+
+        @Override
+        public IamStatement.Builder addNotPrincipal(String iamPrincipalType, String principal) {
+            return addNotPrincipal(IamPrincipal.create(iamPrincipalType, principal));
+        }
+
+        @Override
+        public IamStatement.Builder addNotPrincipals(IamPrincipalType notPrincipalType, Collection<String> notPrincipals) {
             Validate.paramNotNull(notPrincipals, "notPrincipals");
             for (String notPrincipal : notPrincipals) {
                 this.notPrincipals.add(IamPrincipal.create(notPrincipalType, notPrincipal));
@@ -311,7 +312,7 @@ public final class DefaultIamStatement implements IamStatement {
         }
 
         @Override
-        public IamStatement.Builder addNotPrincipals(String notPrincipalType, String... notPrincipals) {
+        public IamStatement.Builder addNotPrincipals(String notPrincipalType, Collection<String> notPrincipals) {
             return addNotPrincipals(IamPrincipalType.create(notPrincipalType), notPrincipals);
         }
 
@@ -468,6 +469,11 @@ public final class DefaultIamStatement implements IamStatement {
         }
 
         @Override
+        public IamStatement.Builder addCondition(IamConditionOperator operator, String key, String value) {
+            return addCondition(operator, IamConditionKey.create(key), value);
+        }
+
+        @Override
         public IamStatement.Builder addCondition(String operator, String key, String value) {
             this.conditions.add(IamCondition.create(operator, key, value));
             return this;
@@ -482,6 +488,11 @@ public final class DefaultIamStatement implements IamStatement {
                 this.conditions.add(IamCondition.create(operator, key, value));
             }
             return this;
+        }
+
+        @Override
+        public IamStatement.Builder addConditions(IamConditionOperator operator, String key, Collection<String> values) {
+            return addConditions(operator, IamConditionKey.create(key), values);
         }
 
         @Override

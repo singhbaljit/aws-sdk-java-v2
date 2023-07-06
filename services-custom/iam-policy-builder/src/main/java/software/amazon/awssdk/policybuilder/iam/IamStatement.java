@@ -23,11 +23,6 @@ import software.amazon.awssdk.utils.builder.CopyableBuilder;
 import software.amazon.awssdk.utils.builder.ToCopyableBuilder;
 
 public interface IamStatement extends ToCopyableBuilder<IamStatement.Builder, IamStatement> {
-    static IamStatement fromJson(String json) {
-        // TODO
-        return null;
-    }
-
     static Builder builder() {
         return new DefaultIamStatement.Builder();
     }
@@ -49,18 +44,20 @@ public interface IamStatement extends ToCopyableBuilder<IamStatement.Builder, Ia
         Builder effect(String effect);
 
         Builder principals(Collection<IamPrincipal> principals);
-        Builder principals(IamPrincipal... principals);
         Builder addPrincipal(IamPrincipal principal);
         Builder addPrincipal(Consumer<IamPrincipal.Builder> principal);
-        Builder addPrincipals(IamPrincipalType iamPrincipalType, String... principals);
-        Builder addPrincipals(String iamPrincipalType, String... principals);
+        Builder addPrincipal(IamPrincipalType iamPrincipalType, String principal);
+        Builder addPrincipal(String iamPrincipalType, String principal);
+        Builder addPrincipals(IamPrincipalType iamPrincipalType, Collection<String> principals);
+        Builder addPrincipals(String iamPrincipalType, Collection<String> principals);
 
         Builder notPrincipals(Collection<IamPrincipal> principals);
-        Builder notPrincipals(IamPrincipal... principals);
         Builder addNotPrincipal(IamPrincipal principal);
         Builder addNotPrincipal(Consumer<IamPrincipal.Builder> principal);
-        Builder addNotPrincipals(IamPrincipalType iamPrincipalType, String... principals);
-        Builder addNotPrincipals(String iamPrincipalType, String... principals);
+        Builder addNotPrincipal(IamPrincipalType iamPrincipalType, String principal);
+        Builder addNotPrincipal(String iamPrincipalType, String principal);
+        Builder addNotPrincipals(IamPrincipalType iamPrincipalType, Collection<String> principals);
+        Builder addNotPrincipals(String iamPrincipalType, Collection<String> principals);
 
         Builder actions(Collection<IamAction> actions);
         Builder actionStrings(Collection<String> actions);
@@ -86,8 +83,10 @@ public interface IamStatement extends ToCopyableBuilder<IamStatement.Builder, Ia
         Builder addCondition(IamCondition condition);
         Builder addCondition(Consumer<IamCondition.Builder> condition);
         Builder addCondition(IamConditionOperator operator, IamConditionKey key, String value);
+        Builder addCondition(IamConditionOperator operator, String key, String value);
         Builder addCondition(String operator, String key, String values);
         Builder addConditions(IamConditionOperator operator, IamConditionKey key, Collection<String> values);
+        Builder addConditions(IamConditionOperator operator, String key, Collection<String> values);
         Builder addConditions(String operator, String key, Collection<String> values);
 
         IamStatement build();
