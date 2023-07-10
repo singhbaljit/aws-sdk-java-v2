@@ -72,7 +72,7 @@ public final class DefaultIamPrincipal implements IamPrincipal {
     @Override
     public String toString() {
         return ToString.builder("IamPrincipal")
-                       .add("type", type)
+                       .add("type", type.value())
                        .add("id", id)
                        .build();
     }

@@ -61,7 +61,7 @@ public final class DefaultIamPolicyWriter implements IamPolicyWriter {
 
     @Override
     public String writeToString(IamPolicy policy) {
-        return new String(writePolicy(policy).getBytes(), StandardCharsets.UTF_8);
+        return new String(writeToBytes(policy), StandardCharsets.UTF_8);
     }
 
     @Override

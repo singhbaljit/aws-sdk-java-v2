@@ -33,11 +33,22 @@ public interface IamCondition extends ToCopyableBuilder<IamCondition.Builder, Ia
         return builder().operator(operator).key(key).value(value).build();
     }
 
+    static IamCondition create(IamConditionOperator operator, String key, String value) {
+        return builder().operator(operator).key(key).value(value).build();
+    }
+
     static IamCondition create(String operator, String key, String value) {
         return builder().operator(operator).key(key).value(value).build();
     }
 
     static List<IamCondition> createAll(IamConditionOperator operator, IamConditionKey key, Collection<String> values) {
+        if (values == null) {
+            return emptyList();
+        }
+        return values.stream().map(value -> create(operator, key, value)).collect(Collectors.toList());
+    }
+
+    static List<IamCondition> createAll(IamConditionOperator operator, String key, Collection<String> values) {
         if (values == null) {
             return emptyList();
         }

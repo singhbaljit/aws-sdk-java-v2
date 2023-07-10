@@ -18,7 +18,9 @@ package software.amazon.awssdk.policybuilder.iam.internal;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +31,7 @@ import software.amazon.awssdk.policybuilder.iam.IamPrincipal;
 import software.amazon.awssdk.policybuilder.iam.IamStatement;
 import software.amazon.awssdk.protocols.jsoncore.JsonNode;
 import software.amazon.awssdk.protocols.jsoncore.JsonNodeParser;
+import software.amazon.awssdk.utils.StringInputStream;
 import software.amazon.awssdk.utils.Validate;
 
 public final class DefaultIamPolicyReader implements IamPolicyReader {
@@ -36,12 +39,12 @@ public final class DefaultIamPolicyReader implements IamPolicyReader {
 
     @Override
     public IamPolicy read(String policy) {
-        return readPolicy(JSON_NODE_PARSER.parse(policy));
+        return read(policy.getBytes(StandardCharsets.UTF_8));
     }
 
     @Override
     public IamPolicy read(byte[] policy) {
-        return readPolicy(JSON_NODE_PARSER.parse(policy));
+        return read(new ByteArrayInputStream(policy));
     }
 
     @Override

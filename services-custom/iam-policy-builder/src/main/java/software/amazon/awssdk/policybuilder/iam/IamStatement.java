@@ -38,7 +38,6 @@ public interface IamStatement extends ToCopyableBuilder<IamStatement.Builder, Ia
     List<IamCondition> conditions();
 
     interface Builder extends CopyableBuilder<Builder, IamStatement> {
-
         Builder sid(String sid);
         Builder effect(IamEffect effect);
         Builder effect(String effect);
@@ -88,7 +87,5 @@ public interface IamStatement extends ToCopyableBuilder<IamStatement.Builder, Ia
         Builder addConditions(IamConditionOperator operator, IamConditionKey key, Collection<String> values);
         Builder addConditions(IamConditionOperator operator, String key, Collection<String> values);
         Builder addConditions(String operator, String key, Collection<String> values);
-
-        IamStatement build();
     }
 }

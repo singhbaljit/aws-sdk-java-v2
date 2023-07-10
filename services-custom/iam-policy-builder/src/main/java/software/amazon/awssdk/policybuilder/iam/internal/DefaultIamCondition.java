@@ -84,8 +84,8 @@ public final class DefaultIamCondition implements IamCondition {
     @Override
     public String toString() {
         return ToString.builder("IamCondition")
-                       .add("operator", operator)
-                       .add("key", key)
+                       .add("operator", operator.value())
+                       .add("key", key.value())
                        .add("value", value)
                        .build();
     }
