@@ -178,7 +178,8 @@ public interface IamPolicy extends ToCopyableBuilder<IamPolicy.Builder, IamPolic
      */
     interface Builder extends CopyableBuilder<Builder, IamPolicy> {
         /**
-         * Configure the {@code Id} element of the policy, specifying an optional identifier for the policy.
+         * Configure the <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_id.html">{@code
+         * Id}</a> element of the policy, specifying an optional identifier for the policy.
          * <p>
          * The ID is used differently in different services. ID is allowed in resource-based policies, but not in
          * identity-based policies.
@@ -201,7 +202,9 @@ public interface IamPolicy extends ToCopyableBuilder<IamPolicy.Builder, IamPolic
         Builder id(String id);
 
         /**
-         * Configure the {@code Version} element of the policy, specifying the language syntax rules that are to be used to
+         * Configure the
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_version.html">{@code Version}
+         * </a> element of the policy, specifying the language syntax rules that are to be used to
          * process the policy.
          * <p>
          * By default, this value is {@code 2012-10-17}.
@@ -220,7 +223,9 @@ public interface IamPolicy extends ToCopyableBuilder<IamPolicy.Builder, IamPolic
         Builder version(String version);
 
         /**
-         * Configure the {@code Statement} element of the policy, specifying the access rules for this policy.
+         * Configure the
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_statement.html">{@code
+         * Statement}</a> element of the policy, specifying the access rules for this policy.
          * <p>
          * This will replace any other statements already added to the policy. At least one statement is required to
          * create a policy.
@@ -239,7 +244,9 @@ public interface IamPolicy extends ToCopyableBuilder<IamPolicy.Builder, IamPolic
         Builder statements(Collection<IamStatement> statements);
 
         /**
-         * Append a {@code Statement} element to this policy to specify additional access rules.
+         * Append a
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_statement.html">{@code
+         * Statement}</a> element to this policy to specify additional access rules.
          * <p>
          * At least one statement is required to create a policy.
          * <p>
@@ -257,7 +264,9 @@ public interface IamPolicy extends ToCopyableBuilder<IamPolicy.Builder, IamPolic
         Builder addStatement(IamStatement statement);
 
         /**
-         * Append a {@code Statement} element to this policy to specify additional access rules.
+         * Append a
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_statement.html">{@code
+         * Statement}</a> element to this policy to specify additional access rules.
          * <p>
          * This works the same as {@link #addStatement(IamStatement)}, except you do not need to specify {@code IamStatement
          * .builder()} or {@code build()}. At least one statement is required to create a policy.

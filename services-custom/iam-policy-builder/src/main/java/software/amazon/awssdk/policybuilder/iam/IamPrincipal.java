@@ -25,7 +25,7 @@ import software.amazon.awssdk.utils.builder.CopyableBuilder;
 import software.amazon.awssdk.utils.builder.ToCopyableBuilder;
 
 public interface IamPrincipal extends ToCopyableBuilder<IamPrincipal.Builder, IamPrincipal> {
-    IamPrincipal ALL = create("AWS", "*");
+    IamPrincipal ALL = create("*", "*");
 
     static IamPrincipal create(IamPrincipalType principalType, String principalId) {
         return builder().type(principalType).id(principalId).build();

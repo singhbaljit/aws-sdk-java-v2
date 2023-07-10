@@ -143,39 +143,593 @@ public interface IamStatement extends ToCopyableBuilder<IamStatement.Builder, Ia
     List<IamCondition> conditions();
 
     interface Builder extends CopyableBuilder<Builder, IamStatement> {
+        /**
+         * Configure the <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_sid.html">{@code
+         * Sid}</a> element of the policy, specifying an identifier for the statement.
+         * <p>
+         * {@snippet :
+         * IamStatement statement =
+         *     IamStatement.builder()
+         *                 .sid("1")
+         *                 // Additional fields
+         *                 .build();
+         * }
+         *
+         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_sid.html">Usage Guide</a>
+         */
         Builder sid(String sid);
+
+        /**
+         * Configure the
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_effect.html">{@code Effect}</a>
+         * element of the policy, specifying whether the statement results in an allow or deny.
+         * <p>
+         * This value is required.
+         * <p>
+         * {@snippet :
+         * IamStatement statement =
+         *     IamStatement.builder()
+         *                 .effect(IamEffect.DENY)
+         *                 .addPrincipal(IamPrincipal.ALL)
+         *                 .build();
+         * }
+         *
+         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_effect.html">Usage Guide</a>
+         */
         Builder effect(IamEffect effect);
+
+        /**
+         * Configure the
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_effect.html">{@code Effect}</a>
+         * element of the policy, specifying whether the statement results in an allow or deny.
+         * <p>
+         * This works the same as {@link #effect(IamEffect)}, except you do not need to {@link IamEffect}. This value is required.
+         * <p>
+         * {@snippet :
+         * IamStatement statement =
+         *     IamStatement.builder()
+         *                 .effect("Deny")
+         *                 .addPrincipal(IamPrincipal.ALL)
+         *                 .build();
+         * }
+         *
+         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_effect.html">Usage Guide</a>
+         */
         Builder effect(String effect);
 
+        /**
+         * Configure the
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html">{@code
+         * Principal}</a> element of the statement, specifying the principals that are allowed or denied
+         * access to a resource.
+         * <p>
+         * This will replace any other principals already added to the statement.
+         * <p>
+         * {@snippet :
+         * IamStatement statement =
+         *     IamStatement.builder()
+         *                 .effect(IamEffect.DENY)
+         *                 .principals(Arrays.asList(IamPrincipal.ALL))
+         *                 .build();
+         * }
+         * @see
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html">Usage Guide</a>
+         */
         Builder principals(Collection<IamPrincipal> principals);
+
+        /**
+         * Append a
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html">{@code
+         * Principal}</a> to this statement, specifying a principal that is allowed or denied access to
+         * a resource.
+         * <p>
+         * {@snippet :
+         * IamStatement statement =
+         *     IamStatement.builder()
+         *                 .effect(IamEffect.DENY)
+         *                 .addPrincipal(IamPrincipal.ALL)
+         *                 .build();
+         * }
+         * @see
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html">Usage Guide</a>
+         */
         Builder addPrincipal(IamPrincipal principal);
+
+        /**
+         * Append a
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html">{@code
+         * Principal}</a> to this statement, specifying a principal that is allowed or denied access to
+         * a resource.
+         * <p>
+         * This works the same as {@link #addPrincipal(IamPrincipal)}, except you do not need to specify {@code IamPrincipal
+         * .builder()} or {@code build()}.
+         * <p>
+         * {@snippet :
+         * IamStatement statement =
+         *     IamStatement.builder()
+         *                 .effect(IamEffect.DENY)
+         *                 .addPrincipal(p -> p.type(IamPrincipalType.AWS).id("*"))
+         *                 .build();
+         * }
+         * @see
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html">Usage Guide</a>
+         */
         Builder addPrincipal(Consumer<IamPrincipal.Builder> principal);
+
+        /**
+         * Append a
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html">{@code
+         * Principal}</a> to this statement, specifying a principal that is allowed or denied access to
+         * a resource.
+         * <p>
+         * This works the same as {@link #addPrincipal(IamPrincipal)}, except you do not need to specify {@code IamPrincipal
+         * .create()}.
+         * <p>
+         * {@snippet :
+         * IamStatement statement =
+         *     IamStatement.builder()
+         *                 .effect(IamEffect.DENY)
+         *                 .addPrincipal(IamPrincipalType.AWS, "*")
+         *                 .build();
+         * }
+         * @see
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html">Usage Guide</a>
+         */
         Builder addPrincipal(IamPrincipalType iamPrincipalType, String principal);
+
+        /**
+         * Append a
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html">{@code
+         * Principal}</a> to this statement, specifying a principal that is allowed or denied access to
+         * a resource.
+         * <p>
+         * This works the same as {@link #addPrincipal(IamPrincipalType, String)}, except you do not need to specify {@code
+         * IamPrincipalType.create()}.
+         * <p>
+         * {@snippet :
+         * IamStatement statement =
+         *     IamStatement.builder()
+         *                 .effect(IamEffect.DENY)
+         *                 .addPrincipal("AWS", "*")
+         *                 .build();
+         * }
+         * @see
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html">Usage Guide</a>
+         */
         Builder addPrincipal(String iamPrincipalType, String principal);
+
+        /**
+         * Append multiple
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html">{@code
+         * Principal}s</a> to this statement, specifying principals that are allowed or denied access to
+         * a resource.
+         * <p>
+         * This works the same as calling {@link #addPrincipal(IamPrincipalType, String)} multiple times with the same
+         * {@link IamPrincipalType}.
+         * <p>
+         * {@snippet :
+         * IamStatement statement =
+         *     IamStatement.builder()
+         *                 .effect(IamEffect.ALLOW)
+         *                 .addPrincipals(IamPrincipalType.AWS, Arrays.asList("arn:aws:iam::123456789012:role/role-1",
+         *                                                                    "arn:aws:iam::123456789012:role/role-2"))
+         *                 .build();
+         *
+         * assert statement.principals().size() == 2;
+         * }
+         * @see
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html">Usage Guide</a>
+         */
         Builder addPrincipals(IamPrincipalType iamPrincipalType, Collection<String> principals);
+
+        /**
+         * Append multiple
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html">{@code
+         * Principal}s</a> to this statement, specifying principals that are allowed or denied access to
+         * a resource.
+         * <p>
+         * This works the same as calling {@link #addPrincipal(String, String)} multiple times with the same
+         * {@link IamPrincipalType}.
+         * <p>
+         * {@snippet :
+         * IamStatement statement =
+         *     IamStatement.builder()
+         *                 .effect(IamEffect.ALLOW)
+         *                 .addPrincipals("AWS", Arrays.asList("arn:aws:iam::123456789012:role/role-1",
+         *                                                     "arn:aws:iam::123456789012:role/role-2"))
+         *                 .build();
+         *
+         * assert statement.principals().size() == 2;
+         * }
+         * @see
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html">Usage Guide</a>
+         */
         Builder addPrincipals(String iamPrincipalType, Collection<String> principals);
 
-        Builder notPrincipals(Collection<IamPrincipal> principals);
-        Builder addNotPrincipal(IamPrincipal principal);
-        Builder addNotPrincipal(Consumer<IamPrincipal.Builder> principal);
-        Builder addNotPrincipal(IamPrincipalType iamPrincipalType, String principal);
-        Builder addNotPrincipal(String iamPrincipalType, String principal);
-        Builder addNotPrincipals(IamPrincipalType iamPrincipalType, Collection<String> principals);
-        Builder addNotPrincipals(String iamPrincipalType, Collection<String> principals);
+        /**
+         * Configure the
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notprincipal.html">{@code
+         * NotPrincipal}</a> element of the statement, denying only the principals that are specified.
+         * <p>
+         * Very few scenarios require the use of {@code NotPrincipal}. We recommend that you explore other authorization options
+         * before you decide to use {@code NotPrincipal}.
+         * <p>
+         * This will replace any other not-principals already added to the statement.
+         * <p>
+         * {@snippet :
+         * IamStatement statement =
+         *     IamStatement.builder()
+         *                 .effect(IamEffect.ALLOW)
+         *                 .notPrincipals(Arrays.asList(IamPrincipal.ALL))
+         *                 .build();
+         * }
+         * @see
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notprincipal.html">Usage Guide</a>
+         */
+        Builder notPrincipals(Collection<IamPrincipal> notPrincipals);
+        
+        /**
+         * Append a
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notprincipal.html">{@code
+         * NotPrincipal}</a> to this statement, denying access to the principal that is specified.
+         * <p>
+         * Very few scenarios require the use of {@code NotPrincipal}. We recommend that you explore other authorization options
+         * before you decide to use {@code NotPrincipal}.
+         * <p>
+         * {@snippet :
+         * IamStatement statement =
+         *     IamStatement.builder()
+         *                 .effect(IamEffect.ALLOW)
+         *                 .addNotPrincipal(IamPrincipal.ALL)
+         *                 .build();
+         * }
+         * @see
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notprincipal.html">Usage Guide</a>
+         */
+        Builder addNotPrincipal(IamPrincipal notPrincipal);
 
+        /**
+         * Append a
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notprincipal.html">{@code
+         * NotPrincipal}</a> to this statement, denying access to the principal that is specified.
+         * <p>
+         * Very few scenarios require the use of {@code NotPrincipal}. We recommend that you explore other authorization options
+         * before you decide to use {@code NotPrincipal}.
+         * <p>
+         * This works the same as {@link #addNotPrincipal(IamPrincipal)}, except you do not need to specify {@code IamPrincipal
+         * .builder()} or {@code build()}.
+         * <p>
+         * {@snippet :
+         * IamStatement statement =
+         *     IamStatement.builder()
+         *                 .effect(IamEffect.ALLOW)
+         *                 .addNotPrincipal(p -> p.type(IamPrincipalType.AWS).id("*"))
+         *                 .build();
+         * }
+         * @see
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notprincipal.html">Usage Guide</a>
+         */
+        Builder addNotPrincipal(Consumer<IamPrincipal.Builder> notPrincipal);
+
+        /**
+         * Append a
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notprincipal.html">{@code
+         * NotPrincipal}</a> to this statement, denying access to the principal that is specified.
+         * <p>
+         * Very few scenarios require the use of {@code NotPrincipal}. We recommend that you explore other authorization options
+         * before you decide to use {@code NotPrincipal}.
+         * <p>
+         * This works the same as {@link #addNotPrincipal(IamPrincipal)}, except you do not need to specify {@code IamPrincipal
+         * .create()}.
+         * <p>
+         * {@snippet :
+         * IamStatement statement =
+         *     IamStatement.builder()
+         *                 .effect(IamEffect.ALLOW)
+         *                 .addNotPrincipal(IamPrincipalType.AWS, "*")
+         *                 .build();
+         * }
+         * @see
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notprincipal.html">Usage Guide</a>
+         */
+        Builder addNotPrincipal(IamPrincipalType IamPrincipalType, String notPrincipal);
+
+        /**
+         * Append a
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notprincipal.html">{@code
+         * NotPrincipal}</a> to this statement, denying access to the principal that is specified.
+         * <p>
+         * Very few scenarios require the use of {@code NotPrincipal}. We recommend that you explore other authorization options
+         * before you decide to use {@code NotPrincipal}.
+         * <p>
+         * This works the same as {@link #addNotPrincipal(IamPrincipalType, String)}, except you do not need to specify {@code
+         * IamPrincipalType.create()}.
+         * <p>
+         * {@snippet :
+         * IamStatement statement =
+         *     IamStatement.builder()
+         *                 .effect(IamEffect.ALLOW)
+         *                 .addNotPrincipal("AWS", "*")
+         *                 .build();
+         * }
+         * @see
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notprincipal.html">Usage Guide</a>
+         */
+        Builder addNotPrincipal(String IamPrincipalType, String notPrincipal);
+
+        /**
+         * Append multiple 
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notprincipal.html">{@code
+         * NotPrincipal}s</a> to this statement, denying access to the principal that is specified.
+         * <p>
+         * Very few scenarios require the use of {@code NotPrincipal}. We recommend that you explore other authorization options
+         * before you decide to use {@code NotPrincipal}.
+         * <p>
+         * This works the same as calling {@link #addNotPrincipal(IamPrincipalType, String)} multiple times with the same
+         * {@link IamPrincipalType}.
+         * <p>
+         * {@snippet :
+         * IamStatement statement =
+         *     IamStatement.builder()
+         *                 .effect(IamEffect.ALLOW)
+         *                 .addNotPrincipals(IamPrincipalType.AWS, Arrays.asList("arn:aws:iam::123456789012:role/role-1",
+         *                                                                       "arn:aws:iam::123456789012:role/role-2"))
+         *                 .build();
+         *
+         * assert statement.notPrincipals().size() == 2;
+         * }
+         * @see
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notprincipal.html">Usage Guide</a>
+         */
+        Builder addNotPrincipals(IamPrincipalType IamPrincipalType, Collection<String> notPrincipals);
+
+        /**
+         * Append multiple 
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notprincipal.html">{@code
+         * NotPrincipal}s</a> to this statement, denying access to the principal that is specified.
+         * <p>
+         * Very few scenarios require the use of {@code NotPrincipal}. We recommend that you explore other authorization options
+         * before you decide to use {@code NotPrincipal}.
+         * <p>
+         * This works the same as calling {@link #addNotPrincipal(String, String)} multiple times with the same
+         * {@link IamPrincipalType}.
+         * <p>
+         * {@snippet :
+         * IamStatement statement =
+         *     IamStatement.builder()
+         *                 .effect(IamEffect.ALLOW)
+         *                 .addNotPrincipals("AWS", Arrays.asList("arn:aws:iam::123456789012:role/role-1",
+         *                                                        "arn:aws:iam::123456789012:role/role-2"))
+         *                 .build();
+         *
+         * assert statement.notPrincipals().size() == 2;
+         * }
+         * @see
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notprincipal.html">Usage Guide</a>
+         */
+        Builder addNotPrincipals(String IamPrincipalType, Collection<String> notPrincipals);
+
+        /**
+         * Configure the
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_action.html">{@code Action}</a>
+         * element of the statement, specifying the actions that are allowed or denied.
+         * <p>
+         * This will replace any other actions already added to the statement.
+         * <p>
+         * {@snippet :
+         * IamStatement statement =
+         *     IamStatement.builder()
+         *                 .effect(IamEffect.DENY)
+         *                 .actions(Arrays.asList(IamAction.ALL))
+         *                 .build();
+         * }
+         * @see
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_action.html">Usage Guide</a>
+         */
         Builder actions(Collection<IamAction> actions);
+
+        /**
+         * Configure the
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_action.html">{@code Action}</a>
+         * element of the statement, specifying the actions that are allowed or denied.
+         * <p>
+         * This works the same as {@link #actions(Collection)}, except you do not need to call {@code IamAction.create()
+         * } on each action. This will replace any other actions already added to the statement.
+         * <p>
+         * {@snippet :
+         * IamStatement statement =
+         *     IamStatement.builder()
+         *                 .effect(IamEffect.DENY)
+         *                 .actionStrings(Arrays.asList("*"))
+         *                 .build();
+         * }
+         * @see
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_action.html">Usage Guide</a>
+         */
         Builder actionStrings(Collection<String> actions);
+
+        /**
+         * Append an <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_action.html">{@code
+         * Action}</a> element to this statement, specifying an action that is allowed or denied.
+         * <p>
+         * {@snippet :
+         * IamStatement statement =
+         *     IamStatement.builder()
+         *                 .effect(IamEffect.DENY)
+         *                 .addAction(IamAction.ALL)
+         *                 .build();
+         * }
+         * @see
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_action.html">Usage Guide</a>
+         */
         Builder addAction(IamAction action);
+
+        /**
+         * Append an <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_action.html">{@code
+         * Action}</a> element to this statement, specifying an action that is allowed or denied.
+         * <p>
+         * This works the same as {@link #addAction(IamAction)}, except you do not need to call {@code IamAction.create()}.
+         * <p>
+         * {@snippet :
+         * IamStatement statement =
+         *     IamStatement.builder()
+         *                 .effect(IamEffect.DENY)
+         *                 .addAction("*")
+         *                 .build();
+         * }
+         * @see
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_action.html">Usage Guide</a>
+         */
         Builder addAction(String action);
 
+        /**
+         * Configure the
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notaction.html">{@code
+         * NotAction}</a> element of the statement, specifying actions that are denied or allowed.
+         * <p>
+         * This will replace any other not-actions already added to the statement.
+         * <p>
+         * {@snippet :
+         * IamStatement statement =
+         *     IamStatement.builder()
+         *                 .effect(IamEffect.ALLOW)
+         *                 .notActions(Arrays.asList(IamAction.ALL))
+         *                 .build();
+         * }
+         * @see
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notaction.html">Usage Guide</a>
+         */
         Builder notActions(Collection<IamAction> actions);
+
+        /**
+         * Configure the
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notaction.html">{@code
+         * NotAction}</a> element of the statement, specifying actions that are denied or allowed.
+         * <p>
+         * This works the same as {@link #notActions(Collection)}, except you do not need to call {@code IamAction.create()}
+         * on each action. This will replace any other not-actions already added to the statement.
+         * <p>
+         * {@snippet :
+         * IamStatement statement =
+         *     IamStatement.builder()
+         *                 .effect(IamEffect.ALLOW)
+         *                 .notActionStrings("*")
+         *                 .build();
+         * }
+         * @see
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notaction.html">Usage Guide</a>
+         */
         Builder notActionStrings(Collection<String> actions);
+
+        /**
+         * Append a
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notaction.html">{@code
+         * NotAction}</a> element to this statement, specifying an action that is denied or allowed.
+         * <p>
+         * {@snippet :
+         * IamStatement statement =
+         *     IamStatement.builder()
+         *                 .effect(IamEffect.ALLOW)
+         *                 .addNotAction(IamAction.ALL)
+         *                 .build();
+         * }
+         * @see
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notaction.html">Usage Guide</a>
+         */
         Builder addNotAction(IamAction action);
+
+        /**
+         * Append a
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notaction.html">{@code
+         * NotAction}</a> element to this statement, specifying an action that is denied or allowed.
+         * <p>
+         * This works the same as {@link #addNotAction(IamAction)}, except you do not need to call {@code IamAction.create()}.
+         * <p>
+         * {@snippet :
+         * IamStatement statement =
+         *     IamStatement.builder()
+         *                 .effect(IamEffect.ALLOW)
+         *                 .addNotAction("*")
+         *                 .build();
+         * }
+         * @see
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notaction.html">Usage Guide</a>
+         */
         Builder addNotAction(String action);
 
+        /**
+         * Configure the
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_resource.html">{@code Resource}
+         * </a> element of the statement, specifying the resource(s) that the statement covers.
+         * <p>
+         * This will replace any other resources already added to the statement.
+         * <p>
+         * {@snippet :
+         * IamStatement statement =
+         *     IamStatement.builder()
+         *                 .effect(IamEffect.DENY)
+         *                 .resources(Arrays.asList(IamResource.ALL))
+         *                 .build();
+         * }
+         * @see
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_resource.html">Usage Guide</a>
+         */
         Builder resources(Collection<IamResource> resources);
+
+        /**
+         * Configure the
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_resource.html">{@code Resource}
+         * </a> element of the statement, specifying the resource(s) that the statement covers.
+         * <p>
+         * This works the same as {@link #resources(Collection)}, except you do not need to call {@code IamResource.create()}
+         * on each resource. This will replace any other resources already added to the statement.
+         * <p>
+         * {@snippet :
+         * IamStatement statement =
+         *     IamStatement.builder()
+         *                 .effect(IamEffect.DENY)
+         *                 .resourceStrings(Arrays.asList("*"))
+         *                 .build();
+         * }
+         * @see
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_resource.html">Usage Guide</a>
+         */
         Builder resourceStrings(Collection<String> resources);
+
+        /**
+         * Append a
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_resource.html">{@code Resource}
+         * </a> element to the statement, specifying a resource that the statement covers.
+         * <p>
+         * {@snippet :
+         * IamStatement statement =
+         *     IamStatement.builder()
+         *                 .effect(IamEffect.DENY)
+         *                 .addResource(IamResource.ALL)
+         *                 .build();
+         * }
+         * @see
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_resource.html">Usage Guide</a>
+         */
         Builder addResource(IamResource resource);
+
+        /**
+         * Append a
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_resource.html">{@code Resource}
+         * </a> element to the statement, specifying a resource that the statement covers.
+         * <p>
+         * This works the same as {@link #addResource(IamResource)}, except you do not need to call {@code IamResource.create()}.
+         * <p>
+         * {@snippet :
+         * IamStatement statement =
+         *     IamStatement.builder()
+         *                 .effect(IamEffect.DENY)
+         *                 .addResource("*")
+         *                 .build();
+         * }
+         * @see
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_resource.html">Usage Guide</a>
+         */
         Builder addResource(String resource);
 
         Builder notResources(Collection<IamResource> resources);
