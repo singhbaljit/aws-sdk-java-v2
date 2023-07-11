@@ -63,21 +63,26 @@ import software.amazon.awssdk.utils.builder.ToCopyableBuilder;
  * Statements are typically attached to a {@link IamPolicy}.
  *
  * <p>
- * For more information, see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/">The IAM User Guide</a>
+ * For more information, see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/">The IAM User guide</a>
  *
  * <h2>Usage Examples</h2>
- * <b>Create a statement that allows a role to write items to an Amazon DynamoDB table.</b>
+ * <b>Create an
+ * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies.html#policies_id-based">identity-based policy
+ * statement</a> that allows a role to write items to an Amazon DynamoDB table.</b>
  * {@snippet :
  * IamStatement statement =
  *     IamStatement.builder()
+ *                 .sid("GrantWriteBookMetadata")
  *                 .effect(IamEffect.ALLOW)
  *                 .addAction("dynamodb:PutItem")
- *                 .addResource("arn:aws:dynamodb:us-east-2:123456789012:table/Books")
+ *                 .addResource("arn:aws:dynamodb:us-east-2:123456789012:table/books")
  *                 .build();
  * }
  *
  * <p>
- * <b>Create a statement that denies access to all users.</b>
+ * <b>Create a
+ * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies.html#policies_resource-based">resource-based policy
+ * </a> statement that denies access to all users.</b>
  * {@snippet :
  * IamStatement statement =
  *     IamStatement.builder()
@@ -87,7 +92,8 @@ import software.amazon.awssdk.utils.builder.ToCopyableBuilder;
  * }
  *
  * @see IamPolicy
- * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_statement.html">Usage Guide</a>
+ * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_statement.html">Statement user
+ * guide</a>
  */
 public interface IamStatement extends ToCopyableBuilder<IamStatement.Builder, IamStatement> {
     /**
@@ -142,6 +148,9 @@ public interface IamStatement extends ToCopyableBuilder<IamStatement.Builder, Ia
      */
     List<IamCondition> conditions();
 
+    /**
+     * @see #builder()
+     */
     interface Builder extends CopyableBuilder<Builder, IamStatement> {
         /**
          * Configure the <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_sid.html">{@code
@@ -150,12 +159,15 @@ public interface IamStatement extends ToCopyableBuilder<IamStatement.Builder, Ia
          * {@snippet :
          * IamStatement statement =
          *     IamStatement.builder()
-         *                 .sid("1")
-         *                 // Additional fields
+         *                 .sid("GrantReadBookMetadata") // An identifier for the statement
+         *                 .effect(IamEffect.ALLOW)
+         *                 .addAction("dynamodb:GetItem")
+         *                 .addResource("arn:aws:dynamodb:us-east-2:123456789012:table/books")
          *                 .build();
          * }
          *
-         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_sid.html">Usage Guide</a>
+         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_sid.html">Sid user
+         * guide</a>
          */
         Builder sid(String sid);
 
@@ -169,12 +181,16 @@ public interface IamStatement extends ToCopyableBuilder<IamStatement.Builder, Ia
          * {@snippet :
          * IamStatement statement =
          *     IamStatement.builder()
-         *                 .effect(IamEffect.DENY)
-         *                 .addPrincipal(IamPrincipal.ALL)
+         *                 .sid("GrantReadBookMetadata")
+         *                 .effect(IamEffect.ALLOW) // The statement ALLOWS access
+         *                 .addAction("dynamodb:GetItem")
+         *                 .addResource("arn:aws:dynamodb:us-east-2:123456789012:table/books")
          *                 .build();
          * }
          *
-         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_effect.html">Usage Guide</a>
+         * @see IamEffect
+         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_effect.html">Effect user
+         * guide</a>
          */
         Builder effect(IamEffect effect);
 
@@ -188,12 +204,16 @@ public interface IamStatement extends ToCopyableBuilder<IamStatement.Builder, Ia
          * {@snippet :
          * IamStatement statement =
          *     IamStatement.builder()
-         *                 .effect("Deny")
-         *                 .addPrincipal(IamPrincipal.ALL)
+         *                 .sid("GrantReadBookMetadata")
+         *                 .effect("Allow") // The statement ALLOWs access
+         *                 .addAction("dynamodb:GetItem")
+         *                 .addResource("arn:aws:dynamodb:us-east-2:123456789012:table/books")
          *                 .build();
          * }
          *
-         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_effect.html">Usage Guide</a>
+         * @see IamEffect
+         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_effect.html">Effect user
+         * guide</a>
          */
         Builder effect(String effect);
 
@@ -206,14 +226,24 @@ public interface IamStatement extends ToCopyableBuilder<IamStatement.Builder, Ia
          * This will replace any other principals already added to the statement.
          * <p>
          * {@snippet :
+         * List<IamPrincipal> bookReaderRoles =
+         *     IamPrincipal.createAll("AWS",
+         *                            Arrays.asList("arn:aws:iam::123456789012:role/books-service",
+         *                                          "arn:aws:iam::123456789012:role/books-operator"));
+         *
          * IamStatement statement =
          *     IamStatement.builder()
-         *                 .effect(IamEffect.DENY)
-         *                 .principals(Arrays.asList(IamPrincipal.ALL))
+         *                 .sid("GrantReadBookContent")
+         *                 .effect(IamEffect.ALLOW)
+         *                 .principals(bookReaderRoles) // This statement allows access to the books service and operators
+         *                 .addAction("s3:GetObject")
+         *                 .addResource("arn:aws:s3:us-west-2:123456789012:accesspoint/book-content/object/*")
          *                 .build();
          * }
-         * @see
-         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html">Usage Guide</a>
+         *
+         * @see IamPrincipal
+         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html">Principal
+         * user guide</a>
          */
         Builder principals(Collection<IamPrincipal> principals);
 
@@ -226,12 +256,16 @@ public interface IamStatement extends ToCopyableBuilder<IamStatement.Builder, Ia
          * {@snippet :
          * IamStatement statement =
          *     IamStatement.builder()
-         *                 .effect(IamEffect.DENY)
-         *                 .addPrincipal(IamPrincipal.ALL)
+         *                 .sid("GrantReadBookContent")
+         *                 .effect(IamEffect.ALLOW)
+         *                  // This statement allows access to the books service:
+         *                 .addPrincipal(IamPrincipal.create("AWS", "arn:aws:iam::123456789012:role/books-service"))
+         *                 .addAction("s3:GetObject")
+         *                 .addResource("arn:aws:s3:us-west-2:123456789012:accesspoint/book-content/object/*")
          *                 .build();
          * }
-         * @see
-         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html">Usage Guide</a>
+         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html">Principal
+         * user guide</a>
          */
         Builder addPrincipal(IamPrincipal principal);
 
@@ -247,12 +281,16 @@ public interface IamStatement extends ToCopyableBuilder<IamStatement.Builder, Ia
          * {@snippet :
          * IamStatement statement =
          *     IamStatement.builder()
-         *                 .effect(IamEffect.DENY)
-         *                 .addPrincipal(p -> p.type(IamPrincipalType.AWS).id("*"))
+         *                 .sid("GrantReadBookContent")
+         *                 .effect(IamEffect.ALLOW)
+         *                 // This statement allows access to the books service:
+         *                 .addPrincipal(p -> p.type("AWS").id("arn:aws:iam::123456789012:role/books-service"))
+         *                 .addAction("s3:GetObject")
+         *                 .addResource("arn:aws:s3:us-west-2:123456789012:accesspoint/book-content/object/*")
          *                 .build();
          * }
-         * @see
-         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html">Usage Guide</a>
+         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html">Principal
+         * user guide</a>
          */
         Builder addPrincipal(Consumer<IamPrincipal.Builder> principal);
 
@@ -268,12 +306,16 @@ public interface IamStatement extends ToCopyableBuilder<IamStatement.Builder, Ia
          * {@snippet :
          * IamStatement statement =
          *     IamStatement.builder()
-         *                 .effect(IamEffect.DENY)
-         *                 .addPrincipal(IamPrincipalType.AWS, "*")
+         *                 .sid("GrantReadBookContent")
+         *                 .effect(IamEffect.ALLOW)
+         *                 // This statement allows access to the books service:
+         *                 .addPrincipal(IamPrincipalType.AWS, "arn:aws:iam::123456789012:role/books-service")
+         *                 .addAction("s3:GetObject")
+         *                 .addResource("arn:aws:s3:us-west-2:123456789012:accesspoint/book-content/object/*")
          *                 .build();
          * }
-         * @see
-         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html">Usage Guide</a>
+         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html">Principal
+         * user guide</a>
          */
         Builder addPrincipal(IamPrincipalType iamPrincipalType, String principal);
 
@@ -289,12 +331,16 @@ public interface IamStatement extends ToCopyableBuilder<IamStatement.Builder, Ia
          * {@snippet :
          * IamStatement statement =
          *     IamStatement.builder()
-         *                 .effect(IamEffect.DENY)
-         *                 .addPrincipal("AWS", "*")
+         *                 .sid("GrantReadBookContent")
+         *                 .effect(IamEffect.ALLOW)
+         *                 // This statement allows access to the books service:
+         *                 .addPrincipal("AWS", "arn:aws:iam::123456789012:role/books-service")
+         *                 .addAction("s3:GetObject")
+         *                 .addResource("arn:aws:s3:us-west-2:123456789012:accesspoint/book-content/object/*")
          *                 .build();
          * }
-         * @see
-         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html">Usage Guide</a>
+         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html">Principal
+         * user guide</a>
          */
         Builder addPrincipal(String iamPrincipalType, String principal);
 
@@ -310,15 +356,18 @@ public interface IamStatement extends ToCopyableBuilder<IamStatement.Builder, Ia
          * {@snippet :
          * IamStatement statement =
          *     IamStatement.builder()
+         *                 .sid("GrantReadBookContent")
          *                 .effect(IamEffect.ALLOW)
-         *                 .addPrincipals(IamPrincipalType.AWS, Arrays.asList("arn:aws:iam::123456789012:role/role-1",
-         *                                                                    "arn:aws:iam::123456789012:role/role-2"))
+         *                  // This statement allows access to the books service and operators:
+         *                 .addPrincipals(IamPrincipalType.AWS,
+         *                                Arrays.asList("arn:aws:iam::123456789012:role/books-service",
+         *                                             "arn:aws:iam::123456789012:role/books-operator"))
+         *                 .addAction("s3:GetObject")
+         *                 .addResource("arn:aws:s3:us-west-2:123456789012:accesspoint/book-content/object/*")
          *                 .build();
-         *
-         * assert statement.principals().size() == 2;
          * }
-         * @see
-         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html">Usage Guide</a>
+         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html">Principal
+         * user guide</a>
          */
         Builder addPrincipals(IamPrincipalType iamPrincipalType, Collection<String> principals);
 
@@ -334,15 +383,17 @@ public interface IamStatement extends ToCopyableBuilder<IamStatement.Builder, Ia
          * {@snippet :
          * IamStatement statement =
          *     IamStatement.builder()
+         *                 .sid("GrantReadBookContent")
          *                 .effect(IamEffect.ALLOW)
-         *                 .addPrincipals("AWS", Arrays.asList("arn:aws:iam::123456789012:role/role-1",
-         *                                                     "arn:aws:iam::123456789012:role/role-2"))
+         *                  // This statement allows access to the books service and operators:
+         *                 .addPrincipals("AWS", Arrays.asList("arn:aws:iam::123456789012:role/books-service",
+         *                                                     "arn:aws:iam::123456789012:role/books-operator"))
+         *                 .addAction("s3:GetObject")
+         *                 .addResource("arn:aws:s3:us-west-2:123456789012:accesspoint/book-content/object/*")
          *                 .build();
-         *
-         * assert statement.principals().size() == 2;
          * }
-         * @see
-         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html">Usage Guide</a>
+         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html">Principal
+         * user guide</a>
          */
         Builder addPrincipals(String iamPrincipalType, Collection<String> principals);
 
@@ -357,14 +408,23 @@ public interface IamStatement extends ToCopyableBuilder<IamStatement.Builder, Ia
          * This will replace any other not-principals already added to the statement.
          * <p>
          * {@snippet :
+         * List<IamPrincipal> bookReaderRoles =
+         *     IamPrincipal.createAll("AWS",
+         *                            Arrays.asList("arn:aws:iam::123456789012:role/books-service",
+         *                                          "arn:aws:iam::123456789012:role/books-operator"));
+         *
          * IamStatement statement =
          *     IamStatement.builder()
-         *                 .effect(IamEffect.ALLOW)
-         *                 .notPrincipals(Arrays.asList(IamPrincipal.ALL))
+         *                 .sid("GrantReadBookContent")
+         *                 .effect(IamEffect.DENY)
+         *                  // This statement denies access to everyone except the books service and operators:
+         *                 .notPrincipals(bookReaderRoles)
+         *                 .addAction("s3:GetObject")
+         *                 .addResource("arn:aws:s3:us-west-2:123456789012:accesspoint/book-content/object/*")
          *                 .build();
          * }
-         * @see
-         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notprincipal.html">Usage Guide</a>
+         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notprincipal.html">
+         * NotPrincipal user guide</a>
          */
         Builder notPrincipals(Collection<IamPrincipal> notPrincipals);
         
@@ -379,12 +439,16 @@ public interface IamStatement extends ToCopyableBuilder<IamStatement.Builder, Ia
          * {@snippet :
          * IamStatement statement =
          *     IamStatement.builder()
-         *                 .effect(IamEffect.ALLOW)
-         *                 .addNotPrincipal(IamPrincipal.ALL)
+         *                 .sid("GrantReadBookContent")
+         *                 .effect(IamEffect.DENY)
+         *                  // This statement denies access to everyone except the books service:
+         *                 .addNotPrincipal(IamPrincipal.create("AWS", "arn:aws:iam::123456789012:role/books-service"))
+         *                 .addAction("s3:GetObject")
+         *                 .addResource("arn:aws:s3:us-west-2:123456789012:accesspoint/book-content/object/*")
          *                 .build();
          * }
-         * @see
-         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notprincipal.html">Usage Guide</a>
+         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notprincipal.html">
+         * NotPrincipal user guide</a>
          */
         Builder addNotPrincipal(IamPrincipal notPrincipal);
 
@@ -402,12 +466,16 @@ public interface IamStatement extends ToCopyableBuilder<IamStatement.Builder, Ia
          * {@snippet :
          * IamStatement statement =
          *     IamStatement.builder()
-         *                 .effect(IamEffect.ALLOW)
-         *                 .addNotPrincipal(p -> p.type(IamPrincipalType.AWS).id("*"))
+         *                 .sid("GrantReadBookContent")
+         *                 .effect(IamEffect.DENY)
+         *                  // This statement denies access to everyone except the books service:
+         *                 .addNotPrincipal(p -> p.type("AWS").id("arn:aws:iam::123456789012:role/books-service"))
+         *                 .addAction("s3:GetObject")
+         *                 .addResource("arn:aws:s3:us-west-2:123456789012:accesspoint/book-content/object/*")
          *                 .build();
          * }
-         * @see
-         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notprincipal.html">Usage Guide</a>
+         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notprincipal.html">
+         * NotPrincipal user guide</a>
          */
         Builder addNotPrincipal(Consumer<IamPrincipal.Builder> notPrincipal);
 
@@ -425,12 +493,16 @@ public interface IamStatement extends ToCopyableBuilder<IamStatement.Builder, Ia
          * {@snippet :
          * IamStatement statement =
          *     IamStatement.builder()
-         *                 .effect(IamEffect.ALLOW)
-         *                 .addNotPrincipal(IamPrincipalType.AWS, "*")
+         *                 .sid("GrantReadBookContent")
+         *                 .effect(IamEffect.DENY)
+         *                  // This statement denies access to everyone except the books service:
+         *                 .addNotPrincipal(IamPrincipalType.AWS, "arn:aws:iam::123456789012:role/books-service")
+         *                 .addAction("s3:GetObject")
+         *                 .addResource("arn:aws:s3:us-west-2:123456789012:accesspoint/book-content/object/*")
          *                 .build();
          * }
-         * @see
-         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notprincipal.html">Usage Guide</a>
+         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notprincipal.html">
+         * NotPrincipal user guide</a>
          */
         Builder addNotPrincipal(IamPrincipalType IamPrincipalType, String notPrincipal);
 
@@ -448,14 +520,18 @@ public interface IamStatement extends ToCopyableBuilder<IamStatement.Builder, Ia
          * {@snippet :
          * IamStatement statement =
          *     IamStatement.builder()
-         *                 .effect(IamEffect.ALLOW)
-         *                 .addNotPrincipal("AWS", "*")
+         *                 .sid("GrantReadBookContent")
+         *                 .effect(IamEffect.DENY)
+         *                  // This statement denies access to everyone except the books service:
+         *                 .addNotPrincipal("AWS", "arn:aws:iam::123456789012:role/books-service")
+         *                 .addAction("s3:GetObject")
+         *                 .addResource("arn:aws:s3:us-west-2:123456789012:accesspoint/book-content/object/*")
          *                 .build();
          * }
-         * @see
-         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notprincipal.html">Usage Guide</a>
+         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notprincipal.html">
+         * NotPrincipal user guide</a>
          */
-        Builder addNotPrincipal(String IamPrincipalType, String notPrincipal);
+        Builder addNotPrincipal(String iamPrincipalType, String notPrincipal);
 
         /**
          * Append multiple 
@@ -471,15 +547,18 @@ public interface IamStatement extends ToCopyableBuilder<IamStatement.Builder, Ia
          * {@snippet :
          * IamStatement statement =
          *     IamStatement.builder()
-         *                 .effect(IamEffect.ALLOW)
-         *                 .addNotPrincipals(IamPrincipalType.AWS, Arrays.asList("arn:aws:iam::123456789012:role/role-1",
-         *                                                                       "arn:aws:iam::123456789012:role/role-2"))
+         *                 .sid("GrantReadBookContent")
+         *                 .effect(IamEffect.DENY)
+         *                  // This statement denies access to everyone except the books service and operators:
+         *                 .addNotPrincipals(IamPrincipalType.AWS,
+         *                                   Arrays.asList("arn:aws:iam::123456789012:role/books-service",
+         *                                                "arn:aws:iam::123456789012:role/books-operator"))
+         *                 .addAction("s3:GetObject")
+         *                 .addResource("arn:aws:s3:us-west-2:123456789012:accesspoint/book-content/object/*")
          *                 .build();
-         *
-         * assert statement.notPrincipals().size() == 2;
          * }
-         * @see
-         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notprincipal.html">Usage Guide</a>
+         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notprincipal.html">
+         * NotPrincipal user guide</a>
          */
         Builder addNotPrincipals(IamPrincipalType IamPrincipalType, Collection<String> notPrincipals);
 
@@ -497,17 +576,19 @@ public interface IamStatement extends ToCopyableBuilder<IamStatement.Builder, Ia
          * {@snippet :
          * IamStatement statement =
          *     IamStatement.builder()
-         *                 .effect(IamEffect.ALLOW)
-         *                 .addNotPrincipals("AWS", Arrays.asList("arn:aws:iam::123456789012:role/role-1",
-         *                                                        "arn:aws:iam::123456789012:role/role-2"))
+         *                 .sid("GrantReadBookContent")
+         *                 .effect(IamEffect.DENY)
+         *                  // This statement denies access to everyone except the books service and operators:
+         *                 .addNotPrincipals("AWS", Arrays.asList("arn:aws:iam::123456789012:role/books-service",
+         *                                                        "arn:aws:iam::123456789012:role/books-operator"))
+         *                 .addAction("s3:GetObject")
+         *                 .addResource("arn:aws:s3:us-west-2:123456789012:accesspoint/book-content/object/*")
          *                 .build();
-         *
-         * assert statement.notPrincipals().size() == 2;
          * }
-         * @see
-         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notprincipal.html">Usage Guide</a>
+         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notprincipal.html">
+         * NotPrincipal user guide</a>
          */
-        Builder addNotPrincipals(String IamPrincipalType, Collection<String> notPrincipals);
+        Builder addNotPrincipals(String iamPrincipalType, Collection<String> notPrincipals);
 
         /**
          * Configure the
@@ -519,12 +600,16 @@ public interface IamStatement extends ToCopyableBuilder<IamStatement.Builder, Ia
          * {@snippet :
          * IamStatement statement =
          *     IamStatement.builder()
-         *                 .effect(IamEffect.DENY)
-         *                 .actions(Arrays.asList(IamAction.ALL))
+         *                 .sid("GrantReadWriteBookMetadata")
+         *                 .effect(IamEffect.ALLOW)
+         *                 // This statement grants access to read and write items in Amazon DynamoDB:
+         *                 .actions(Arrays.asList(IamAction.create("dynamodb:PutItem"),
+         *                                        IamAction.create("dynamodb:GetItem")))
+         *                 .addResource("arn:aws:dynamodb:us-east-2:123456789012:table/books")
          *                 .build();
          * }
-         * @see
-         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_action.html">Usage Guide</a>
+         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_action.html">Action user
+         * guide</a>
          */
         Builder actions(Collection<IamAction> actions);
 
@@ -539,14 +624,17 @@ public interface IamStatement extends ToCopyableBuilder<IamStatement.Builder, Ia
          * {@snippet :
          * IamStatement statement =
          *     IamStatement.builder()
-         *                 .effect(IamEffect.DENY)
-         *                 .actionStrings(Arrays.asList("*"))
+         *                 .sid("GrantReadWriteBookMetadata")
+         *                 .effect(IamEffect.ALLOW)
+         *                 // This statement grants access to read and write items in Amazon DynamoDB:
+         *                 .actionIds(Arrays.asList("dynamodb:PutItem", "dynamodb:GetItem"))
+         *                 .addResource("arn:aws:dynamodb:us-east-2:123456789012:table/books")
          *                 .build();
          * }
-         * @see
-         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_action.html">Usage Guide</a>
+         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_action.html">Action user
+         * guide</a>
          */
-        Builder actionStrings(Collection<String> actions);
+        Builder actionIds(Collection<String> actions);
 
         /**
          * Append an <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_action.html">{@code
@@ -555,12 +643,15 @@ public interface IamStatement extends ToCopyableBuilder<IamStatement.Builder, Ia
          * {@snippet :
          * IamStatement statement =
          *     IamStatement.builder()
-         *                 .effect(IamEffect.DENY)
-         *                 .addAction(IamAction.ALL)
+         *                 .sid("GrantReadBookMetadata")
+         *                 .effect(IamEffect.ALLOW)
+         *                 // This statement grants access to read items in Amazon DynamoDB:
+         *                 .addAction(IamAction.create("dynamodb:GetItem"))
+         *                 .addResource("arn:aws:dynamodb:us-east-2:123456789012:table/books")
          *                 .build();
          * }
-         * @see
-         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_action.html">Usage Guide</a>
+         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_action.html">Action user
+         * guide</a>
          */
         Builder addAction(IamAction action);
 
@@ -573,12 +664,15 @@ public interface IamStatement extends ToCopyableBuilder<IamStatement.Builder, Ia
          * {@snippet :
          * IamStatement statement =
          *     IamStatement.builder()
-         *                 .effect(IamEffect.DENY)
-         *                 .addAction("*")
+         *                 .sid("GrantReadBookMetadata")
+         *                 .effect(IamEffect.ALLOW)
+         *                 // This statement grants access to read items in Amazon DynamoDB:
+         *                 .addAction("dynamodb:GetItem")
+         *                 .addResource("arn:aws:dynamodb:us-east-2:123456789012:table/books")
          *                 .build();
          * }
-         * @see
-         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_action.html">Usage Guide</a>
+         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_action.html">Action user
+         * guide</a>
          */
         Builder addAction(String action);
 
@@ -592,12 +686,16 @@ public interface IamStatement extends ToCopyableBuilder<IamStatement.Builder, Ia
          * {@snippet :
          * IamStatement statement =
          *     IamStatement.builder()
+         *                 .sid("GrantAllButDeleteBookMetadataTable")
          *                 .effect(IamEffect.ALLOW)
-         *                 .notActions(Arrays.asList(IamAction.ALL))
+         *                 // This statement grants access to do ALL CURRENT AND FUTURE actions against the books table, except
+         *                 // dynamodb:DeleteTable
+         *                 .notActions(Arrays.asList(IamAction.create("dynamodb:DeleteTable")))
+         *                 .addResource("arn:aws:dynamodb:us-east-2:123456789012:table/books")
          *                 .build();
          * }
-         * @see
-         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notaction.html">Usage Guide</a>
+         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notaction.html">NotAction
+         * user guide</a>
          */
         Builder notActions(Collection<IamAction> actions);
 
@@ -612,14 +710,18 @@ public interface IamStatement extends ToCopyableBuilder<IamStatement.Builder, Ia
          * {@snippet :
          * IamStatement statement =
          *     IamStatement.builder()
+         *                 .sid("GrantAllButDeleteBookMetadataTable")
          *                 .effect(IamEffect.ALLOW)
-         *                 .notActionStrings("*")
+         *                 // This statement grants access to do ALL CURRENT AND FUTURE actions against the books table, except
+         *                 // dynamodb:DeleteTable
+         *                 .notActionIds(Arrays.asList("dynamodb:DeleteTable"))
+         *                 .addResource("arn:aws:dynamodb:us-east-2:123456789012:table/books")
          *                 .build();
          * }
-         * @see
-         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notaction.html">Usage Guide</a>
+         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notaction.html">NotAction
+         * user guide</a>
          */
-        Builder notActionStrings(Collection<String> actions);
+        Builder notActionIds(Collection<String> actions);
 
         /**
          * Append a
@@ -629,12 +731,16 @@ public interface IamStatement extends ToCopyableBuilder<IamStatement.Builder, Ia
          * {@snippet :
          * IamStatement statement =
          *     IamStatement.builder()
+         *                 .sid("GrantAllButDeleteBookMetadataTable")
          *                 .effect(IamEffect.ALLOW)
-         *                 .addNotAction(IamAction.ALL)
+         *                 // This statement grants access to do ALL CURRENT AND FUTURE actions against the books table, except
+         *                 // dynamodb:DeleteTable
+         *                 .addNotAction(IamAction.create("dynamodb:DeleteTable"))
+         *                 .addResource("arn:aws:dynamodb:us-east-2:123456789012:table/books")
          *                 .build();
          * }
-         * @see
-         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notaction.html">Usage Guide</a>
+         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notaction.html">NotAction
+         * user guide</a>
          */
         Builder addNotAction(IamAction action);
 
@@ -648,12 +754,16 @@ public interface IamStatement extends ToCopyableBuilder<IamStatement.Builder, Ia
          * {@snippet :
          * IamStatement statement =
          *     IamStatement.builder()
+         *                 .sid("GrantAllButDeleteBookMetadataTable")
          *                 .effect(IamEffect.ALLOW)
-         *                 .addNotAction("*")
+         *                 // This statement grants access to do ALL CURRENT AND FUTURE actions against the books table, except
+         *                 // dynamodb:DeleteTable
+         *                 .addNotAction("dynamodb:DeleteTable")
+         *                 .addResource("arn:aws:dynamodb:us-east-2:123456789012:table/books")
          *                 .build();
          * }
-         * @see
-         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notaction.html">Usage Guide</a>
+         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notaction.html">NotAction
+         * user guide</a>
          */
         Builder addNotAction(String action);
 
@@ -667,12 +777,16 @@ public interface IamStatement extends ToCopyableBuilder<IamStatement.Builder, Ia
          * {@snippet :
          * IamStatement statement =
          *     IamStatement.builder()
-         *                 .effect(IamEffect.DENY)
-         *                 .resources(Arrays.asList(IamResource.ALL))
+         *                 .sid("GrantReadBookAndCustomersMetadata")
+         *                 .effect(IamEffect.ALLOW)
+         *                 .addAction("dynamodb:GetItem")
+         *                 // This statement grants access to the books and customers tables:
+         *                 .resources(Arrays.asList(IamResource.create("arn:aws:dynamodb:us-east-2:123456789012:table/books"),
+         *                                          IamResource.create("arn:aws:dynamodb:us-east-2:123456789012:table/customers")))
          *                 .build();
          * }
-         * @see
-         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_resource.html">Usage Guide</a>
+         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_resource.html">Resource
+         * user guide</a>
          */
         Builder resources(Collection<IamResource> resources);
 
@@ -687,14 +801,18 @@ public interface IamStatement extends ToCopyableBuilder<IamStatement.Builder, Ia
          * {@snippet :
          * IamStatement statement =
          *     IamStatement.builder()
-         *                 .effect(IamEffect.DENY)
-         *                 .resourceStrings(Arrays.asList("*"))
+         *                 .sid("GrantReadBookAndCustomersMetadata")
+         *                 .effect(IamEffect.ALLOW)
+         *                 .addAction("dynamodb:GetItem")
+         *                 // This statement grants access to the books and customers tables:
+         *                 .resourceIds(Arrays.asList("arn:aws:dynamodb:us-east-2:123456789012:table/books",
+         *                                            "arn:aws:dynamodb:us-east-2:123456789012:table/customers"))
          *                 .build();
          * }
-         * @see
-         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_resource.html">Usage Guide</a>
+         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_resource.html">Resource
+         * user guide</a>
          */
-        Builder resourceStrings(Collection<String> resources);
+        Builder resourceIds(Collection<String> resources);
 
         /**
          * Append a
@@ -704,12 +822,15 @@ public interface IamStatement extends ToCopyableBuilder<IamStatement.Builder, Ia
          * {@snippet :
          * IamStatement statement =
          *     IamStatement.builder()
-         *                 .effect(IamEffect.DENY)
-         *                 .addResource(IamResource.ALL)
+         *                 .sid("GrantReadBookMetadata")
+         *                 .effect(IamEffect.ALLOW)
+         *                 .addAction("dynamodb:GetItem")
+         *                 // This statement grants access to the books table:
+         *                 .addResource(IamResource.create("arn:aws:dynamodb:us-east-2:123456789012:table/books"))
          *                 .build();
          * }
-         * @see
-         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_resource.html">Usage Guide</a>
+         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_resource.html">Resource
+         * user guide</a>
          */
         Builder addResource(IamResource resource);
 
@@ -723,28 +844,334 @@ public interface IamStatement extends ToCopyableBuilder<IamStatement.Builder, Ia
          * {@snippet :
          * IamStatement statement =
          *     IamStatement.builder()
-         *                 .effect(IamEffect.DENY)
-         *                 .addResource("*")
+         *                 .sid("GrantReadBookMetadata")
+         *                 .effect(IamEffect.ALLOW)
+         *                 .addAction("dynamodb:GetItem")
+         *                 // This statement grants access to the books table:
+         *                 .addResource("arn:aws:dynamodb:us-east-2:123456789012:table/books")
          *                 .build();
          * }
-         * @see
-         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_resource.html">Usage Guide</a>
+         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_resource.html">Resource
+         * user guide</a>
          */
         Builder addResource(String resource);
 
+        /**
+         * Configure the
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notresource.html">{@code
+         * NotResource}</a> element of the statement, specifying that the statement should apply to every resource except the
+         * ones listed.
+         * <p>
+         * This will replace any other not-resources already added to the statement.
+         * <p>
+         * {@snippet :
+         * IamStatement statement =
+         *     IamStatement.builder()
+         *                 .sid("GrantReadNotCustomers")
+         *                 .effect(IamEffect.ALLOW)
+         *                 .addAction("dynamodb:GetItem")
+         *                 // This statement grants access to EVERY CURRENT AND FUTURE RESOURCE except the customers table:
+         *                 .notResources(Arrays.asList(IamResource.create("arn:aws:dynamodb:us-east-2:123456789012:table/customers")))
+         *                 .build();
+         * }
+         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notresource.html">
+         * NotResource user guide</a>
+         */
         Builder notResources(Collection<IamResource> resources);
-        Builder notResourceStrings(Collection<String> resources);
+
+        /**
+         * Configure the
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notresource.html">{@code
+         * NotResource}</a> element of the statement, specifying that the statement should apply to every resource except the
+         * ones listed.
+         * <p>
+         * This works the same as {@link #notResources(Collection)}, except you do not need to call {@code IamResource.create()}
+         * on each resource. This will replace any other not-resources already added to the statement.
+         * <p>
+         * {@snippet :
+         * IamStatement statement =
+         *     IamStatement.builder()
+         *                 .sid("GrantReadNotCustomers")
+         *                 .effect(IamEffect.ALLOW)
+         *                 .addAction("dynamodb:GetItem")
+         *                 // This statement grants access to EVERY CURRENT AND FUTURE RESOURCE except the customers table:
+         *                 .notResourceIds(Arrays.asList("arn:aws:dynamodb:us-east-2:123456789012:table/customers"))
+         *                 .build();
+         * }
+         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notresource.html">
+         * NotResource user guide</a>
+         */
+        Builder notResourceIds(Collection<String> resources);
+
+        /**
+         * Append a
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notresource.html">{@code
+         * NotResource} </a> element to the statement, specifying that the statement should apply to every resource except the
+         * ones listed.
+         * <p>
+         * {@snippet :
+         * IamStatement statement =
+         *     IamStatement.builder()
+         *                 .sid("GrantReadNotCustomers")
+         *                 .effect(IamEffect.ALLOW)
+         *                 .addAction("dynamodb:GetItem")
+         *                 // This statement grants access to EVERY CURRENT AND FUTURE RESOURCE except the customers table:
+         *                 .addNotResource(IamResource.create("arn:aws:dynamodb:us-east-2:123456789012:table/customers"))
+         *                 .build();
+         * }
+         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notresource.html">
+         * NotResource user guide</a>
+         */
         Builder addNotResource(IamResource resource);
+
+        /**
+         * Append a
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notresource.html">{@code
+         * NotResource} </a> element to the statement, specifying that the statement should apply to every resource except the
+         * ones listed.
+         * <p>
+         * {@snippet :
+         * IamStatement statement =
+         *     IamStatement.builder()
+         *                 .sid("GrantReadNotCustomers")
+         *                 .effect(IamEffect.ALLOW)
+         *                 .addAction("dynamodb:GetItem")
+         *                 // This statement grants access to EVERY CURRENT AND FUTURE RESOURCE except the customers table:
+         *                 .addNotResource("arn:aws:dynamodb:us-east-2:123456789012:table/customers")
+         *                 .build();
+         * }
+         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notresource.html">
+         * NotResource user guide</a>
+         */
         Builder addNotResource(String resource);
 
+        /**
+         * Configure the
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition.html">{@code
+         * Condition}</a> element of the statement, specifying the conditions in which the statement is in effect.
+         * <p>
+         * This will replace any other conditions already added to the statement.
+         * <p>
+         * {@snippet :
+         * IamCondition startTime = IamCondition.create(IamConditionOperator.DATE_GREATER_THAN,
+         *                                              "aws:CurrentTime",
+         *                                              "1988-05-21T00:00:00Z");
+         * IamCondition endTime = IamCondition.create(IamConditionOperator.DATE_LESS_THAN,
+         *                                            "aws:CurrentTime",
+         *                                            "2065-09-01T00:00:00Z");
+         *
+         * IamStatement statement =
+         *     IamStatement.builder()
+         *                 .sid("GrantReadBooks")
+         *                 .effect(IamEffect.ALLOW)
+         *                 .addAction("dynamodb:GetItem")
+         *                 .addResource("arn:aws:dynamodb:us-east-2:123456789012:table/books")
+         *                 // This statement grants access between the specified start and end times:
+         *                 .conditions(Arrays.asList(startTime, endTime))
+         *                 .build();
+         * }
+         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition.html">Condition
+         * user guide</a>
+         */
         Builder conditions(Collection<IamCondition> conditions);
+
+        /**
+         * Append a
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition.html">{@code
+         * Condition}</a> to the statement, specifying a condition in which the statement is in effect.
+         * <p>
+         * {@snippet :
+         * IamStatement statement =
+         *     IamStatement.builder()
+         *                 .sid("GrantReadBooks")
+         *                 .effect(IamEffect.ALLOW)
+         *                 .addAction("dynamodb:GetItem")
+         *                 .addResource("arn:aws:dynamodb:us-east-2:123456789012:table/books")
+         *                 // This statement grants access after a specified start time:
+         *                 .addCondition(IamCondition.create(IamConditionOperator.DATE_GREATER_THAN,
+         *                                                   "aws:CurrentTime",
+         *                                                   "1988-05-21T00:00:00Z"))
+         *                 .build();
+         * }
+         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition.html">Condition
+         * user guide</a>
+         */
         Builder addCondition(IamCondition condition);
+
+        /**
+         * Append a
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition.html">{@code
+         * Condition}</a> to the statement, specifying a condition in which the statement is in effect.
+         * <p>
+         * This works the same as {@link #addCondition(IamCondition)}, except you do not need to specify {@code IamCondition
+         * .builder()} or {@code build()}.
+         * <p>
+         * {@snippet :
+         * IamStatement statement =
+         *     IamStatement.builder()
+         *                 .sid("GrantReadBooks")
+         *                 .effect(IamEffect.ALLOW)
+         *                 .addAction("dynamodb:GetItem")
+         *                 .addResource("arn:aws:dynamodb:us-east-2:123456789012:table/books")
+         *                 // This statement grants access after a specified start time:
+         *                 .addCondition(c -> c.operator(IamConditionOperator.DATE_GREATER_THAN)
+         *                                     .key("aws:CurrentTime")
+         *                                     .value("1988-05-21T00:00:00Z"))
+         *                 .build();
+         * }
+         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition.html">Condition
+         * user guide</a>
+         */
         Builder addCondition(Consumer<IamCondition.Builder> condition);
+
+        /**
+         * Append a
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition.html">{@code
+         * Condition}</a> to the statement, specifying a condition in which the statement is in effect.
+         * <p>
+         * This works the same as {@link #addCondition(IamCondition)}, except you do not need to specify {@code IamCondition
+         * .create()}.
+         * <p>
+         * {@snippet :
+         * IamStatement statement =
+         *     IamStatement.builder()
+         *                 .sid("GrantReadBooks")
+         *                 .effect(IamEffect.ALLOW)
+         *                 .addAction("dynamodb:GetItem")
+         *                 .addResource("arn:aws:dynamodb:us-east-2:123456789012:table/books")
+         *                 // This statement grants access after a specified start time:
+         *                 .addCondition(IamConditionOperator.DATE_GREATER_THAN,
+         *                               IamConditionKey.create("aws:CurrentTime"),
+         *                               "1988-05-21T00:00:00Z")
+         *                 .build();
+         * }
+         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition.html">Condition
+         * user guide</a>
+         */
         Builder addCondition(IamConditionOperator operator, IamConditionKey key, String value);
+
+        /**
+         * Append a
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition.html">{@code
+         * Condition}</a> to the statement, specifying a condition in which the statement is in effect.
+         * <p>
+         * This works the same as {@link #addCondition(IamCondition)}, except you do not need to specify {@code IamCondition
+         * .create()}.
+         * <p>
+         * {@snippet :
+         * IamStatement statement =
+         *     IamStatement.builder()
+         *                 .sid("GrantReadBooks")
+         *                 .effect(IamEffect.ALLOW)
+         *                 .addAction("dynamodb:GetItem")
+         *                 .addResource("arn:aws:dynamodb:us-east-2:123456789012:table/books")
+         *                 // This statement grants access after a specified start time:
+         *                 .addCondition(IamConditionOperator.DATE_GREATER_THAN, "aws:CurrentTime", "1988-05-21T00:00:00Z")
+         *                 .build();
+         * }
+         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition.html">Condition
+         * user guide</a>
+         */
         Builder addCondition(IamConditionOperator operator, String key, String value);
+
+        /**
+         * Append a
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition.html">{@code
+         * Condition}</a> to the statement, specifying a condition in which the statement is in effect.
+         * <p>
+         * This works the same as {@link #addCondition(IamCondition)}, except you do not need to specify {@code IamCondition
+         * .create()}.
+         * <p>
+         * {@snippet :
+         * IamStatement statement =
+         *     IamStatement.builder()
+         *                 .sid("GrantReadBooks")
+         *                 .effect(IamEffect.ALLOW)
+         *                 .addAction("dynamodb:GetItem")
+         *                 .addResource("arn:aws:dynamodb:us-east-2:123456789012:table/books")
+         *                 // This statement grants access after a specified start time:
+         *                 .addCondition("DateGreaterThan", "aws:CurrentTime", "1988-05-21T00:00:00Z")
+         *                 .build();
+         * }
+         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition.html">Condition
+         * user guide</a>
+         */
         Builder addCondition(String operator, String key, String values);
+
+        /**
+         * Append multiple
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition.html">{@code
+         * Condition}s</a> to the statement, specifying conditions in which the statement is in effect.
+         * <p>
+         * This works the same as {@link #addCondition(IamConditionOperator, IamConditionKey, String)} multiple times with the
+         * same operator and key, but different values.
+         * <p>
+         * {@snippet :
+         * IamStatement statement =
+         *     IamStatement.builder()
+         *                 .sid("GrantReadBooks")
+         *                 .effect(IamEffect.ALLOW)
+         *                 .addAction("dynamodb:GetItem")
+         *                 .addResource("arn:aws:dynamodb:us-east-2:123456789012:table/books")
+         *                 // This statement grants access only in the us-east-1 and us-west-2 regions:
+         *                 .addConditions(IamConditionOperator.STRING_EQUALS,
+         *                                IamConditionKey.create("aws:RequestedRegion"),
+         *                                Arrays.asList("us-east-1", "us-west-2"))
+         *                 .build();
+         * }
+         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition.html">Condition
+         * user guide</a>
+         */
         Builder addConditions(IamConditionOperator operator, IamConditionKey key, Collection<String> values);
+
+        /**
+         * Append multiple
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition.html">{@code
+         * Condition}s</a> to the statement, specifying conditions in which the statement is in effect.
+         * <p>
+         * This works the same as {@link #addCondition(IamConditionOperator, String, String)} multiple times with the
+         * same operator and key, but different values.
+         * <p>
+         * {@snippet :
+         * IamStatement statement =
+         *     IamStatement.builder()
+         *                 .sid("GrantReadBooks")
+         *                 .effect(IamEffect.ALLOW)
+         *                 .addAction("dynamodb:GetItem")
+         *                 .addResource("arn:aws:dynamodb:us-east-2:123456789012:table/books")
+         *                 // This statement grants access only in the us-east-1 and us-west-2 regions:
+         *                 .addConditions(IamConditionOperator.STRING_EQUALS,
+         *                                "aws:RequestedRegion",
+         *                                Arrays.asList("us-east-1", "us-west-2"))
+         *                 .build();
+         * }
+         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition.html">Condition
+         * user guide</a>
+         */
         Builder addConditions(IamConditionOperator operator, String key, Collection<String> values);
+
+        /**
+         * Append multiple
+         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition.html">{@code
+         * Condition}s</a> to the statement, specifying conditions in which the statement is in effect.
+         * <p>
+         * This works the same as {@link #addCondition(String, String, String)} multiple times with the
+         * same operator and key, but different values.
+         * <p>
+         * {@snippet :
+         * IamStatement statement =
+         *     IamStatement.builder()
+         *                 .sid("GrantReadBooks")
+         *                 .effect(IamEffect.ALLOW)
+         *                 .addAction("dynamodb:GetItem")
+         *                 .addResource("arn:aws:dynamodb:us-east-2:123456789012:table/books")
+         *                 // This statement grants access only in the us-east-1 and us-west-2 regions:
+         *                 .addConditions("StringEquals", "aws:RequestedRegion", Arrays.asList("us-east-1", "us-west-2"))
+         *                 .build();
+         * }
+         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition.html">Condition
+         * user guide</a>
+         */
         Builder addConditions(String operator, String key, Collection<String> values);
     }
 }

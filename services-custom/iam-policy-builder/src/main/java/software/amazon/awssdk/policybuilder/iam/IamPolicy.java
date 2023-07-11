@@ -49,42 +49,49 @@ import software.amazon.awssdk.utils.builder.ToCopyableBuilder;
  * For more information, see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/">The IAM User Guide</a>
  *
  * <h2>Usage Examples</h2>
- * <b>Print an identity policy that allows a role to write items to an Amazon DynamoDB table.</b>
+ * <b>Create a new IAM identity policy that allows a role to write items to an Amazon DynamoDB table.</b>
  * {@snippet :
- * IamPolicy policy =
- *     IamPolicy.builder()
- *              .addStatement(IamStatement.builder()
- *                                        .effect(IamEffect.ALLOW)
- *                                        .addAction("dynamodb:PutItem")
- *                                        .addResource("arn:aws:dynamodb:us-east-2:123456789012:table/Books")
- *                                        .build())
- *              .build();
- * System.out.println("Policy:\n" + policy.toJson());
+ * // IamClient requires a dependency on software.amazon.awssdk:iam
+ * try (IamClient iam = IamClient.create()) {
+ *     IamPolicy policy =
+ *         IamPolicy.builder()
+ *                  .addStatement(IamStatement.builder()
+ *                                            .effect(IamEffect.ALLOW)
+ *                                            .addAction("dynamodb:PutItem")
+ *                                            .addResource("arn:aws:dynamodb:us-east-2:123456789012:table/books")
+ *                                            .build())
+ *                  .build();
+ *     iam.createPolicy(r -> r.policyName("AllowWriteBookMetadata")
+ *                            .policyDocument(policy.toJson()));
+ * }
  * }
  *
  * <p>
- * <b>Read an IAM policy and check to see if its actions are related to Amazon DynamoDB.</b>
+ * <b>Download the policy uploaded in the previous example and create a new policy with "read" access added to it.</b>
  * {@snippet :
- * IamPolicy policy = IamPolicy.fromJson("""{
- *   "Version": "2012-10-17",
- *   "Statement": {
- *     "Effect": "Allow",
- *     "Action": "dynamodb:PutItem",
- *     "Resource": "arn:aws:dynamodb:us-east-2:123456789012:table/Books"
- *   }
- * }""");
- * policy.statements().forEach(statement -> {
- *     Stream.concat(statement.actions().stream(),statement.notActions().stream()).forEach(action -> {
- *         if (action.value().contains("dynamodb")) {
- *             System.out.println("Action or NotAction involves DynamoDB: " + action.value());
- *         }
- *     });
- * });
+ * // IamClient requires a dependency on software.amazon.awssdk:iam
+ * try (IamClient iam = IamClient.create()) {
+ *     String policyArn = "arn:aws:iam::123456789012:policy/AllowWriteBookMetadata";
+ *     GetPolicyResponse getPolicyResponse = iam.getPolicy(r -> r.policyArn(policyArn));
+ *
+ *     String policyVersion = getPolicyResponse.defaultVersionId();
+ *     GetPolicyVersionResponse getPolicyVersionResponse =
+ *         iam.getPolicyVersion(r -> r.policyArn(policyArn).versionId(policyVersion));
+ *
+ *     IamPolicy policy = IamPolicy.fromJson(getPolicyVersionResponse.policyVersion().document());
+ *
+ *     IamStatement newStatement = policy.statements().get(0).copy(s -> s.addAction("dynamodb:GetItem"));
+ *     IamPolicy newPolicy = policy.copy(p -> p.statements(Arrays.asList(newStatement)));
+ *
+ *     iam.createPolicy(r -> r.policyName("AllowReadWriteBookMetadata")
+ *                            .policyDocument(newPolicy.toJson()));
+ * }
  * }
  *
  * @see IamPolicyReader
  * @see IamPolicyWriter
  * @see IamStatement
+ * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/">IAM User Guide</a>
  */
 public interface IamPolicy extends ToCopyableBuilder<IamPolicy.Builder, IamPolicy> {
     /**
@@ -142,7 +149,7 @@ public interface IamPolicy extends ToCopyableBuilder<IamPolicy.Builder, IamPolic
      *              .addStatement(IamStatement.builder()
      *                                        .effect(IamEffect.ALLOW)
      *                                        .addAction("dynamodb:PutItem")
-     *                                        .addResource("arn:aws:dynamodb:us-east-2:123456789012:table/Books")
+     *                                        .addResource("arn:aws:dynamodb:us-east-2:123456789012:table/books")
      *                                        .build())
      *              .build();
      * System.out.println("Policy:\n" + policy.toJson());
@@ -165,7 +172,7 @@ public interface IamPolicy extends ToCopyableBuilder<IamPolicy.Builder, IamPolic
      *              .addStatement(IamStatement.builder()
      *                                        .effect(IamEffect.ALLOW)
      *                                        .addAction("dynamodb:PutItem")
-     *                                        .addResource("arn:aws:dynamodb:us-east-2:123456789012:table/Books")
+     *                                        .addResource("arn:aws:dynamodb:us-east-2:123456789012:table/books")
      *                                        .build())
      *              .build();
      * System.out.println("Policy:\n" + policy.toJson(prettyWriter));
@@ -192,12 +199,15 @@ public interface IamPolicy extends ToCopyableBuilder<IamPolicy.Builder, IamPolic
          * {@snippet :
          * IamPolicy policy =
          *     IamPolicy.builder()
-         *              .id("cd3ad3d9-2776-4ef1-a904-4c229d1642ee")
-         *              // Additional fields
+         *              .id("cd3ad3d9-2776-4ef1-a904-4c229d1642ee") // An identifier for the policy
+         *              .addStatement(IamStatement.builder()
+         *                                        .effect(IamEffect.DENY)
+         *                                        .addAction(IamAction.ALL)
+         *                                        .build())
          *              .build();
-         * }
+         *}
          *
-         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_id.html">Usage Guide</a>
+         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_id.html">ID user guide</a>
          */
         Builder id(String id);
 
@@ -212,13 +222,16 @@ public interface IamPolicy extends ToCopyableBuilder<IamPolicy.Builder, IamPolic
          * {@snippet :
          * IamPolicy policy =
          *     IamPolicy.builder()
-         *              .version("2012-10-17")
-         *              // Additional fields
+         *              .version("2012-10-17") // The IAM policy language syntax version to use
+         *              .addStatement(IamStatement.builder()
+         *                                        .effect(IamEffect.DENY)
+         *                                        .addAction(IamAction.ALL)
+         *                                        .build())
          *              .build();
          * }
          *
-         * @see
-         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_version.html">Usage Guide</a>
+         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_version.html">Version
+         * user guide</a>
          */
         Builder version(String version);
 
@@ -233,13 +246,15 @@ public interface IamPolicy extends ToCopyableBuilder<IamPolicy.Builder, IamPolic
          * {@snippet :
          * IamPolicy policy =
          *     IamPolicy.builder()
+         *              // Add a statement to this policy that denies all actions:
          *              .statements(Arrays.asList(IamStatement.builder()
          *                                                    .effect(IamEffect.DENY)
+         *                                                    .addAction(IamAction.ALL)
          *                                                    .build()))
          *              .build();
          * }
-         * @see
-         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_statement.html">Usage Guide</a>
+         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_statement.html">
+         * Statement user guide</a>
          */
         Builder statements(Collection<IamStatement> statements);
 
@@ -253,13 +268,15 @@ public interface IamPolicy extends ToCopyableBuilder<IamPolicy.Builder, IamPolic
          * {@snippet :
          * IamPolicy policy =
          *     IamPolicy.builder()
+         *              // Add a statement to this policy that denies all actions:
          *              .addStatement(IamStatement.builder()
          *                                        .effect(IamEffect.DENY)
+         *                                        .addAction(IamAction.ALL)
          *                                        .build())
          *              .build();
          * }
-         * @see
-         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_statement.html">Usage Guide</a>
+         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_statement.html">
+         * Statement user guide</a>
          */
         Builder addStatement(IamStatement statement);
 
@@ -274,11 +291,13 @@ public interface IamPolicy extends ToCopyableBuilder<IamPolicy.Builder, IamPolic
          * {@snippet :
          * IamPolicy policy =
          *     IamPolicy.builder()
-         *              .addStatement(s -> s.effect(IamEffect.DENY))
+         *              // Add a statement to this policy that denies all actions:
+         *              .addStatement(s -> s.effect(IamEffect.DENY)
+         *                                  .addAction(IamAction.ALL))
          *              .build();
          * }
-         * @see
-         * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_statement.html">Usage Guide</a>
+         * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_statement.html">
+         * Statement user guide</a>
          */
         Builder addStatement(Consumer<IamStatement.Builder> statement);
     }

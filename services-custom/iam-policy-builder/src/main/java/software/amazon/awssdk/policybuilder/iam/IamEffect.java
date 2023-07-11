@@ -17,12 +17,29 @@ package software.amazon.awssdk.policybuilder.iam;
 
 import software.amazon.awssdk.policybuilder.iam.internal.DefaultIamEffect;
 
+/**
+ * The {@code Effect} element of a {@link IamStatement}, specifying whether the statement should ALLOW or DENY certain actions.
+ *
+ * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_effect.html">User Guide</a>
+ */
 public interface IamEffect extends IamValue {
+    /**
+     * The {@link IamStatement} to which this effect is attached should ALLOW the actions described in the policy, and DENY
+     * everything else.
+     */
     IamEffect ALLOW = create("Allow");
+
+    /**
+     * The {@link IamStatement} to which this effect is attached should DENY the actions described in the policy. This takes
+     * precedence over any other ALLOW statements. See the
+     * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic.html">policy evaluation
+     * logic guide</a> for more information on how to use the DENY effect.
+     */
     IamEffect DENY = create("Deny");
 
-    String value();
-
+    /**
+     * Create a new {@code IamEffect} element with the provided {@link #value()}.
+     */
     static IamEffect create(String value) {
         return new DefaultIamEffect(value);
     }

@@ -31,7 +31,6 @@ import software.amazon.awssdk.policybuilder.iam.IamPrincipal;
 import software.amazon.awssdk.policybuilder.iam.IamStatement;
 import software.amazon.awssdk.protocols.jsoncore.JsonNode;
 import software.amazon.awssdk.protocols.jsoncore.JsonNodeParser;
-import software.amazon.awssdk.utils.StringInputStream;
 import software.amazon.awssdk.utils.Validate;
 
 public final class DefaultIamPolicyReader implements IamPolicyReader {
@@ -105,10 +104,10 @@ public final class DefaultIamPolicyReader implements IamPolicyReader {
                            .effect(getString(statementObject, "Effect"))
                            .principals(readPrincipals(statementObject, "Principal"))
                            .notPrincipals(readPrincipals(statementObject, "NotPrincipal"))
-                           .actionStrings(readStringArray(statementObject, "Action"))
-                           .notActionStrings(readStringArray(statementObject, "NotAction"))
-                           .resourceStrings(readStringArray(statementObject, "Resource"))
-                           .notResourceStrings(readStringArray(statementObject, "NotResource"))
+                           .actionIds(readStringArray(statementObject, "Action"))
+                           .notActionIds(readStringArray(statementObject, "NotAction"))
+                           .resourceIds(readStringArray(statementObject, "Resource"))
+                           .notResourceIds(readStringArray(statementObject, "NotResource"))
                            .conditions(readConditions(statementObject.get("Condition")))
                            .build();
     }

@@ -158,7 +158,7 @@ class IamStatementTest {
     public void actionGettersSettersWork() {
         assertThat(statement(s -> s.actions(asList(ACTION_1, ACTION_2))).actions())
             .containsExactly(ACTION_1, ACTION_2);
-        assertThat(statement(s -> s.actionStrings(asList("1", "2"))).actions())
+        assertThat(statement(s -> s.actionIds(asList("1", "2"))).actions())
             .containsExactly(ACTION_1, ACTION_2);
         assertThat(statement(s -> s.addAction(ACTION_1).addAction(ACTION_2)).actions())
             .containsExactly(ACTION_1, ACTION_2);
@@ -177,7 +177,7 @@ class IamStatementTest {
     public void notActionGettersSettersWork() {
         assertThat(statement(s -> s.notActions(asList(ACTION_1, ACTION_2))).notActions())
             .containsExactly(ACTION_1, ACTION_2);
-        assertThat(statement(s -> s.notActionStrings(asList("1", "2"))).notActions())
+        assertThat(statement(s -> s.notActionIds(asList("1", "2"))).notActions())
             .containsExactly(ACTION_1, ACTION_2);
         assertThat(statement(s -> s.addNotAction(ACTION_1).addNotAction(ACTION_2)).notActions())
             .containsExactly(ACTION_1, ACTION_2);
@@ -196,7 +196,7 @@ class IamStatementTest {
     public void resourceGettersSettersWork() {
         assertThat(statement(s -> s.resources(asList(RESOURCE_1, RESOURCE_2))).resources())
             .containsExactly(RESOURCE_1, RESOURCE_2);
-        assertThat(statement(s -> s.resourceStrings(asList("1", "2"))).resources())
+        assertThat(statement(s -> s.resourceIds(asList("1", "2"))).resources())
             .containsExactly(RESOURCE_1, RESOURCE_2);
         assertThat(statement(s -> s.addResource(RESOURCE_1).addResource(RESOURCE_2)).resources())
             .containsExactly(RESOURCE_1, RESOURCE_2);
@@ -215,7 +215,7 @@ class IamStatementTest {
     public void notResourceGettersSettersWork() {
         assertThat(statement(s -> s.notResources(asList(RESOURCE_1, RESOURCE_2))).notResources())
             .containsExactly(RESOURCE_1, RESOURCE_2);
-        assertThat(statement(s -> s.notResourceStrings(asList("1", "2"))).notResources())
+        assertThat(statement(s -> s.notResourceIds(asList("1", "2"))).notResources())
             .containsExactly(RESOURCE_1, RESOURCE_2);
         assertThat(statement(s -> s.addNotResource(RESOURCE_1).addNotResource(RESOURCE_2)).notResources())
             .containsExactly(RESOURCE_1, RESOURCE_2);

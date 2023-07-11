@@ -16,5 +16,9 @@
 package software.amazon.awssdk.policybuilder.iam;
 
 public interface IamValue {
+    /**
+     * Retrieve the string that should represent this element in the serialized IAM policy when it is marshalled via
+     * {@link IamPolicyWriter}.
+     */
     String value();
 }

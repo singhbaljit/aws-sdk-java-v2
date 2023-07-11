@@ -326,7 +326,7 @@ public final class DefaultIamStatement implements IamStatement {
         }
 
         @Override
-        public IamStatement.Builder actionStrings(Collection<String> actions) {
+        public IamStatement.Builder actionIds(Collection<String> actions) {
             this.actions.clear();
             if (actions != null) {
                 actions.forEach(this::addAction);
@@ -357,7 +357,7 @@ public final class DefaultIamStatement implements IamStatement {
         }
 
         @Override
-        public IamStatement.Builder notActionStrings(Collection<String> notActions) {
+        public IamStatement.Builder notActionIds(Collection<String> notActions) {
             this.notActions.clear();
             if (notActions != null) {
                 notActions.forEach(this::addNotAction);
@@ -388,7 +388,7 @@ public final class DefaultIamStatement implements IamStatement {
         }
 
         @Override
-        public IamStatement.Builder resourceStrings(Collection<String> resources) {
+        public IamStatement.Builder resourceIds(Collection<String> resources) {
             this.resources.clear();
             if (resources != null) {
                 resources.forEach(this::addResource);
@@ -419,7 +419,7 @@ public final class DefaultIamStatement implements IamStatement {
         }
 
         @Override
-        public IamStatement.Builder notResourceStrings(Collection<String> notResources) {
+        public IamStatement.Builder notResourceIds(Collection<String> notResources) {
             this.notResources.clear();
             if (notResources != null) {
                 notResources.forEach(this::addNotResource);
