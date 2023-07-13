@@ -21,6 +21,12 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * The annotated element must not be null. Accepts any type.
+ * <p>
+ * This is useful to tell linting and testing tools that a particular value will never be null. It's not meant to be used on
+ * public interfaces as something that customers should rely on.
+ */
 @Documented
 @Target({ElementType.METHOD,
          ElementType.FIELD,

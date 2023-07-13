@@ -180,16 +180,29 @@ public class JsonWriter implements SdkAutoCloseable {
          * The {@link JsonFactory} implementation to be used when parsing the input. This allows JSON extensions like CBOR or
          * Ion to be supported.
          *
-         * <p>It's highly recommended us use a shared {@code JsonFactory} where possible, so they should be stored statically:
+         * <p>It's highly recommended to use a shared {@code JsonFactory} where possible, so they should be stored statically:
          * http://wiki.fasterxml.com/JacksonBestPracticesPerformance
          *
          * <p>By default, this is {@link JsonNodeParser#DEFAULT_JSON_FACTORY}.
+         *
+         * <p>Setting this value will also override any values set via {@link #jsonGeneratorFactory}.
          */
         public JsonWriter.Builder jsonFactory(JsonFactory jsonFactory) {
             jsonGeneratorFactory(jsonFactory::createGenerator);
             return this;
         }
 
+        /**
+         * A factory for {@link JsonGenerator}s based on an {@link OutputStream}. This allows custom JSON generator
+         * configuration, like pretty-printing output.
+         *
+         * <p>It's highly recommended to use a shared {@code JsonFactory} within this generator factory, where possible, so they
+         * should be stored statically: http://wiki.fasterxml.com/JacksonBestPracticesPerformance
+         *
+         * <p>By default, this delegates to {@link JsonNodeParser#DEFAULT_JSON_FACTORY} to create the generator.
+         *
+         * <p>Setting this value will also override any values set via {@link #jsonFactory}.
+         */
         public JsonWriter.Builder jsonGeneratorFactory(JsonGeneratorFactory jsonGeneratorFactory) {
             this.jsonGeneratorFactory = jsonGeneratorFactory;
             return this;
@@ -203,6 +216,9 @@ public class JsonWriter implements SdkAutoCloseable {
         }
     }
 
+    /**
+     * Generate a {@link JsonGenerator} for a {@link OutputStream}. This will get called once for each "write" call.
+     */
     @FunctionalInterface
     public interface JsonGeneratorFactory {
         JsonGenerator createGenerator(OutputStream outputStream) throws IOException;
