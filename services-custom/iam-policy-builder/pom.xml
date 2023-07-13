@@ -119,7 +119,7 @@
                 <configuration>
                     <archive>
                         <manifestEntries>
-                            <Automatic-Module-Name>software.amazon.awssdk.iam.policybuilder</Automatic-Module-Name>
+                            <Automatic-Module-Name>software.amazon.awssdk.policybuilder.iam</Automatic-Module-Name>
                         </manifestEntries>
                     </archive>
                 </configuration>
