@@ -15,11 +15,23 @@
 
 package software.amazon.awssdk.policybuilder.iam;
 
+import software.amazon.awssdk.annotations.SdkPublicApi;
+import software.amazon.awssdk.annotations.ThreadSafe;
 import software.amazon.awssdk.policybuilder.iam.internal.DefaultIamConditionKey;
 
+/**
+ * The {@code IamConditionKey} specifies the "left hand side" of an {@link IamCondition}.
+ *
+ * @see IamCondition
+ * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition.html">Condition
+ * user guide</a>
+ */
+@SdkPublicApi
+@ThreadSafe
 public interface IamConditionKey extends IamValue {
-    String value();
-
+    /**
+     * Create a new {@code IamConditionKey} element with the provided {@link #value()}.
+     */
     static IamConditionKey create(String value) {
         return new DefaultIamConditionKey(value);
     }

@@ -22,10 +22,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import software.amazon.awssdk.annotations.NotNull;
+import software.amazon.awssdk.annotations.SdkInternalApi;
 import software.amazon.awssdk.policybuilder.iam.IamCondition;
 import software.amazon.awssdk.policybuilder.iam.IamConditionKey;
 import software.amazon.awssdk.policybuilder.iam.IamConditionOperator;
 import software.amazon.awssdk.policybuilder.iam.IamPolicy;
+import software.amazon.awssdk.policybuilder.iam.IamPolicyReader;
 import software.amazon.awssdk.policybuilder.iam.IamPolicyWriter;
 import software.amazon.awssdk.policybuilder.iam.IamPrincipal;
 import software.amazon.awssdk.policybuilder.iam.IamPrincipalType;
@@ -36,6 +38,12 @@ import software.amazon.awssdk.protocols.jsoncore.JsonWriter;
 import software.amazon.awssdk.protocols.jsoncore.JsonWriter.JsonGeneratorFactory;
 import software.amazon.awssdk.thirdparty.jackson.core.JsonGenerator;
 
+/**
+ * Default implementation of {@link IamPolicyWriter}.
+ *
+ * @see IamPolicyWriter#create
+ */
+@SdkInternalApi
 public final class DefaultIamPolicyWriter implements IamPolicyWriter {
     private static final IamPolicyWriter INSTANCE = IamPolicyWriter.builder().build();
 

@@ -16,10 +16,17 @@
 package software.amazon.awssdk.policybuilder.iam.internal;
 
 import software.amazon.awssdk.annotations.NotNull;
+import software.amazon.awssdk.annotations.SdkInternalApi;
 import software.amazon.awssdk.policybuilder.iam.IamAction;
 import software.amazon.awssdk.utils.ToString;
 import software.amazon.awssdk.utils.Validate;
 
+/**
+ * Default implementation of {@link IamAction}.
+ *
+ * @see IamAction#create
+ */
+@SdkInternalApi
 public final class DefaultIamAction implements IamAction {
     @NotNull private final String value;
 

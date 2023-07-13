@@ -17,9 +17,12 @@ package software.amazon.awssdk.policybuilder.iam;
 
 import static java.util.Collections.emptyList;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
+import software.amazon.awssdk.annotations.SdkPublicApi;
+import software.amazon.awssdk.annotations.ThreadSafe;
 import software.amazon.awssdk.policybuilder.iam.internal.DefaultIamPrincipal;
 import software.amazon.awssdk.utils.Validate;
 import software.amazon.awssdk.utils.builder.CopyableBuilder;
@@ -31,6 +34,8 @@ import software.amazon.awssdk.utils.builder.ToCopyableBuilder;
  * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html">Principal
  * user guide</a>
  */
+@SdkPublicApi
+@ThreadSafe
 public interface IamPrincipal extends ToCopyableBuilder<IamPrincipal.Builder, IamPrincipal> {
     /**
      * An {@link IamPrincipal} representing ALL principals. When used on a statement, it means the policy should apply to
@@ -74,7 +79,7 @@ public interface IamPrincipal extends ToCopyableBuilder<IamPrincipal.Builder, Ia
         }
         return principalIds.stream()
                            .map(principalId -> create(principalType, principalId))
-                           .collect(Collectors.toList());
+                           .collect(Collectors.toCollection(ArrayList::new));
     }
 
     /**
@@ -91,7 +96,7 @@ public interface IamPrincipal extends ToCopyableBuilder<IamPrincipal.Builder, Ia
         }
         return principalIds.stream()
                            .map(principalId -> create(principalType, principalId))
-                           .collect(Collectors.toList());
+                           .collect(Collectors.toCollection(ArrayList::new));
     }
 
     /**

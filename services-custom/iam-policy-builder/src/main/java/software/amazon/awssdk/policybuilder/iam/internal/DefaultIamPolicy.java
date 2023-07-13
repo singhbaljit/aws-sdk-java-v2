@@ -18,18 +18,25 @@ package software.amazon.awssdk.policybuilder.iam.internal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 import software.amazon.awssdk.annotations.NotNull;
+import software.amazon.awssdk.annotations.SdkInternalApi;
 import software.amazon.awssdk.policybuilder.iam.IamPolicy;
 import software.amazon.awssdk.policybuilder.iam.IamPolicyWriter;
 import software.amazon.awssdk.policybuilder.iam.IamStatement;
 import software.amazon.awssdk.utils.ToString;
 import software.amazon.awssdk.utils.Validate;
 
+/**
+ * Default implementation of {@link IamPolicy}.
+ *
+ * @see IamPolicy#create
+ * @see IamPolicy#fromJson(String)
+ * @see IamPolicy#builder()
+ */
+@SdkInternalApi
 public final class DefaultIamPolicy implements IamPolicy {
     private final String id;
     @NotNull private final String version;
@@ -116,7 +123,6 @@ public final class DefaultIamPolicy implements IamPolicy {
         private String id;
         private String version;
         private final List<IamStatement> statements = new ArrayList<>();
-        private final Map<String, String> additionalJsonFields = new LinkedHashMap<>();
 
         public Builder () {
         }

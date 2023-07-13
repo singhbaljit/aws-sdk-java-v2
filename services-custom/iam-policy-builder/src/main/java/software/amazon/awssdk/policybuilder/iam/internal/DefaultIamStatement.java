@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 import software.amazon.awssdk.annotations.NotNull;
+import software.amazon.awssdk.annotations.SdkInternalApi;
 import software.amazon.awssdk.policybuilder.iam.IamAction;
 import software.amazon.awssdk.policybuilder.iam.IamCondition;
 import software.amazon.awssdk.policybuilder.iam.IamConditionKey;
@@ -34,6 +35,12 @@ import software.amazon.awssdk.policybuilder.iam.IamStatement;
 import software.amazon.awssdk.utils.ToString;
 import software.amazon.awssdk.utils.Validate;
 
+/**
+ * Default implementation of {@link IamStatement}.
+ *
+ * @see IamStatement#builder
+ */
+@SdkInternalApi
 public final class DefaultIamStatement implements IamStatement {
     private final String sid;
     @NotNull private final IamEffect effect;

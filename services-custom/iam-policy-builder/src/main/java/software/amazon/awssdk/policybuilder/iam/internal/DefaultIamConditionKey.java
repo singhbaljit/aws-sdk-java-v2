@@ -16,10 +16,18 @@
 package software.amazon.awssdk.policybuilder.iam.internal;
 
 import software.amazon.awssdk.annotations.NotNull;
+import software.amazon.awssdk.annotations.SdkInternalApi;
+import software.amazon.awssdk.policybuilder.iam.IamCondition;
 import software.amazon.awssdk.policybuilder.iam.IamConditionKey;
 import software.amazon.awssdk.utils.ToString;
 import software.amazon.awssdk.utils.Validate;
 
+/**
+ * Default implementation of {@link IamConditionKey}.
+ *
+ * @see IamConditionKey#create
+ */
+@SdkInternalApi
 public final class DefaultIamConditionKey implements IamConditionKey {
     @NotNull private final String value;
 

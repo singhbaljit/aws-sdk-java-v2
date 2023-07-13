@@ -15,13 +15,17 @@
 
 package software.amazon.awssdk.policybuilder.iam;
 
+import software.amazon.awssdk.annotations.SdkPublicApi;
+import software.amazon.awssdk.annotations.ThreadSafe;
 import software.amazon.awssdk.policybuilder.iam.internal.DefaultIamAction;
 
 /**
  * The {@code Action} element of a {@link IamStatement}, specifying which service actions the statement applies to.
  *
- * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_action.html">User Guide</a>
+ * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_action.html">Action user guide</a>
  */
+@SdkPublicApi
+@ThreadSafe
 public interface IamAction extends IamValue {
     /**
      * An {@link IamAction} representing ALL actions. When used on a statement, it means the policy should apply to

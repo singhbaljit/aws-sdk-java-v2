@@ -15,14 +15,18 @@
 
 package software.amazon.awssdk.policybuilder.iam;
 
+import software.amazon.awssdk.annotations.SdkPublicApi;
+import software.amazon.awssdk.annotations.ThreadSafe;
 import software.amazon.awssdk.policybuilder.iam.internal.DefaultIamPrincipalType;
 
 /**
- * The {@code IamPrincipalType} identifies what type of entity that the principal refers to.
+ * The {@code IamPrincipalType} identifies what type of entity that the {@link IamPrincipal} refers to.
  *
  * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html">Principal
  * user guide</a>
  */
+@SdkPublicApi
+@ThreadSafe
 public interface IamPrincipalType extends IamValue {
     /**
      * An {@code AWS} principal.

@@ -16,11 +16,19 @@
 package software.amazon.awssdk.policybuilder.iam.internal;
 
 import software.amazon.awssdk.annotations.NotNull;
+import software.amazon.awssdk.annotations.SdkInternalApi;
+import software.amazon.awssdk.policybuilder.iam.IamPolicyWriter;
 import software.amazon.awssdk.policybuilder.iam.IamPrincipal;
 import software.amazon.awssdk.policybuilder.iam.IamPrincipalType;
 import software.amazon.awssdk.utils.ToString;
 import software.amazon.awssdk.utils.Validate;
 
+/**
+ * Default implementation of {@link IamPrincipal}.
+ *
+ * @see IamPrincipal#create
+ */
+@SdkInternalApi
 public final class DefaultIamPrincipal implements IamPrincipal {
     @NotNull private final IamPrincipalType type;
     @NotNull private final String id;

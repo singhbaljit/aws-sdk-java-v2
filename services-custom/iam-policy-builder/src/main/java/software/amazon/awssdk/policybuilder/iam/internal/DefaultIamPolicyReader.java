@@ -24,6 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import software.amazon.awssdk.annotations.SdkInternalApi;
 import software.amazon.awssdk.policybuilder.iam.IamCondition;
 import software.amazon.awssdk.policybuilder.iam.IamPolicy;
 import software.amazon.awssdk.policybuilder.iam.IamPolicyReader;
@@ -33,6 +34,12 @@ import software.amazon.awssdk.protocols.jsoncore.JsonNode;
 import software.amazon.awssdk.protocols.jsoncore.JsonNodeParser;
 import software.amazon.awssdk.utils.Validate;
 
+/**
+ * Default implementation of {@link IamPolicyReader}.
+ *
+ * @see IamPolicyReader#create
+ */
+@SdkInternalApi
 public final class DefaultIamPolicyReader implements IamPolicyReader {
     private static final JsonNodeParser JSON_NODE_PARSER = JsonNodeParser.create();
 

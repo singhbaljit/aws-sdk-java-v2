@@ -15,13 +15,18 @@
 
 package software.amazon.awssdk.policybuilder.iam;
 
+import software.amazon.awssdk.annotations.SdkPublicApi;
+import software.amazon.awssdk.annotations.ThreadSafe;
 import software.amazon.awssdk.policybuilder.iam.internal.DefaultIamResource;
 
 /**
  * The {@code Resource} element of a {@link IamStatement}, specifying which resource the statement applies to.
  *
- * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_resource.html">User Guide</a>
+ * @see
+ * <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_resource.html">Resource user guide</a>
  */
+@SdkPublicApi
+@ThreadSafe
 public interface IamResource extends IamValue {
     /**
      * An {@link IamResource} representing ALL resources. When used on a statement, it means the policy should apply to

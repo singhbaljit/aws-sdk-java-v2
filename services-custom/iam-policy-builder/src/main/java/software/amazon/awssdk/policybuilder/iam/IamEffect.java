@@ -15,13 +15,17 @@
 
 package software.amazon.awssdk.policybuilder.iam;
 
+import software.amazon.awssdk.annotations.SdkPublicApi;
+import software.amazon.awssdk.annotations.ThreadSafe;
 import software.amazon.awssdk.policybuilder.iam.internal.DefaultIamEffect;
 
 /**
  * The {@code Effect} element of a {@link IamStatement}, specifying whether the statement should ALLOW or DENY certain actions.
  *
- * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_effect.html">User Guide</a>
+ * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_effect.html">Effect user guide</a>
  */
+@SdkPublicApi
+@ThreadSafe
 public interface IamEffect extends IamValue {
     /**
      * The {@link IamStatement} to which this effect is attached should ALLOW the actions described in the policy, and DENY

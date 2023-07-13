@@ -18,6 +18,8 @@ package software.amazon.awssdk.policybuilder.iam;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
+import software.amazon.awssdk.annotations.SdkPublicApi;
+import software.amazon.awssdk.annotations.ThreadSafe;
 import software.amazon.awssdk.policybuilder.iam.internal.DefaultIamStatement;
 import software.amazon.awssdk.utils.builder.CopyableBuilder;
 import software.amazon.awssdk.utils.builder.ToCopyableBuilder;
@@ -95,6 +97,8 @@ import software.amazon.awssdk.utils.builder.ToCopyableBuilder;
  * @see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_statement.html">Statement user
  * guide</a>
  */
+@SdkPublicApi
+@ThreadSafe
 public interface IamStatement extends ToCopyableBuilder<IamStatement.Builder, IamStatement> {
     /**
      * Create a {@link Builder} for an {@code IamStatement}.

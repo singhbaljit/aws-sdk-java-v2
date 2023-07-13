@@ -16,10 +16,18 @@
 package software.amazon.awssdk.policybuilder.iam.internal;
 
 import software.amazon.awssdk.annotations.NotNull;
+import software.amazon.awssdk.annotations.SdkInternalApi;
+import software.amazon.awssdk.policybuilder.iam.IamPrincipalType;
 import software.amazon.awssdk.policybuilder.iam.IamResource;
 import software.amazon.awssdk.utils.ToString;
 import software.amazon.awssdk.utils.Validate;
 
+/**
+ * Default implementation of {@link IamResource}.
+ *
+ * @see IamResource#create
+ */
+@SdkInternalApi
 public final class DefaultIamResource implements IamResource {
     @NotNull private final String value;
 

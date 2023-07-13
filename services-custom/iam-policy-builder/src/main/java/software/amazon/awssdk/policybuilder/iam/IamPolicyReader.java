@@ -16,14 +16,71 @@
 package software.amazon.awssdk.policybuilder.iam;
 
 import java.io.InputStream;
+import software.amazon.awssdk.annotations.SdkPublicApi;
+import software.amazon.awssdk.annotations.ThreadSafe;
 import software.amazon.awssdk.policybuilder.iam.internal.DefaultIamPolicyReader;
 
+/**
+ * The {@link IamPolicyReader} converts a JSON policy into an {@link IamPolicy}.
+ *
+ * <h2>Usage Examples</h2>
+ * <b>Log the number of statements in a policy downloaded from IAM.</b>
+ * {@snippet :
+ * // IamClient requires a dependency on software.amazon.awssdk:iam
+ * try (IamClient iam = IamClient.create()) {
+ *     String policyArn = "arn:aws:iam::123456789012:policy/AllowWriteBookMetadata";
+ *     GetPolicyResponse getPolicyResponse = iam.getPolicy(r -> r.policyArn(policyArn));
+ *
+ *     String policyVersion = getPolicyResponse.defaultVersionId();
+ *     GetPolicyVersionResponse getPolicyVersionResponse =
+ *         iam.getPolicyVersion(r -> r.policyArn(policyArn).versionId(policyVersion));
+ *
+ *     IamPolicy policy = IamPolicyReader.create().read(getPolicyVersionResponse.policyVersion().document());
+ *
+ *     System.out.println("Number of statements in the " + policyArn + ": " + policy.statements().size());
+ * }
+ * }
+ *
+ * @see IamPolicy#fromJson(String)
+ */
+@SdkPublicApi
+@ThreadSafe
 public interface IamPolicyReader {
+    /**
+     * Create a new {@link IamPolicyReader}.
+     * <p>
+     * This method is inexpensive, allowing the creation of readers wherever they are needed.
+     */
     static IamPolicyReader create() {
         return new DefaultIamPolicyReader();
     }
 
+    /**
+     * Read a policy from a {@link String}.
+     * <p>
+     * This only performs minimal validation on the provided policy.
+     *
+     * @throws RuntimeException If the provided policy is not valid JSON or is missing a minimal set of required fields.
+     */
     IamPolicy read(String policy);
+
+    /**
+     * Read a policy from an {@link InputStream}.
+     * <p>
+     * The stream must provide a UTF-8 encoded string representing the policy. This only performs minimal validation on the
+     * provided policy.
+     *
+     * @throws RuntimeException If the provided policy is not valid JSON or is missing a minimal set of required fields.
+     */
     IamPolicy read(InputStream policy);
+
+    /**
+     * Read a policy from a {@code byte} array.
+     * <p>
+     * The stream must provide a UTF-8 encoded string representing the policy. This only performs minimal validation on the
+     * provided policy.
+     *
+     * @throws RuntimeException If the provided policy is not valid JSON or is missing a minimal set of required fields.
+     */
     IamPolicy read(byte[] policy);
 }
