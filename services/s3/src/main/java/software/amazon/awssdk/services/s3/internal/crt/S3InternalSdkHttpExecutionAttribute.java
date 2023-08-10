@@ -15,6 +15,7 @@
 
 package software.amazon.awssdk.services.s3.internal.crt;
 
+import java.nio.file.Path;
 import software.amazon.awssdk.annotations.SdkInternalApi;
 import software.amazon.awssdk.core.interceptor.trait.HttpChecksum;
 import software.amazon.awssdk.crt.s3.ResumeToken;
@@ -37,6 +38,9 @@ public final class S3InternalSdkHttpExecutionAttribute<T> extends SdkHttpExecuti
 
     public static final S3InternalSdkHttpExecutionAttribute<ResumeToken> CRT_PAUSE_RESUME_TOKEN =
         new S3InternalSdkHttpExecutionAttribute<>(ResumeToken.class);
+
+    public static final S3InternalSdkHttpExecutionAttribute<Path> SOURCE_REQ_PATH =
+        new S3InternalSdkHttpExecutionAttribute<>(Path.class);
 
     public static final S3InternalSdkHttpExecutionAttribute<Region> SIGNING_REGION =
         new S3InternalSdkHttpExecutionAttribute<>(Region.class);

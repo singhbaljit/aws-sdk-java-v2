@@ -21,9 +21,11 @@ import static software.amazon.awssdk.services.s3.internal.crt.S3InternalSdkHttpE
 import static software.amazon.awssdk.services.s3.internal.crt.S3InternalSdkHttpExecutionAttribute.METAREQUEST_PAUSE_OBSERVABLE;
 import static software.amazon.awssdk.services.s3.internal.crt.S3InternalSdkHttpExecutionAttribute.OPERATION_NAME;
 import static software.amazon.awssdk.services.s3.internal.crt.S3InternalSdkHttpExecutionAttribute.SIGNING_REGION;
+import static software.amazon.awssdk.services.s3.internal.crt.S3InternalSdkHttpExecutionAttribute.SOURCE_REQ_PATH;
 import static software.amazon.awssdk.utils.FunctionalUtils.invokeSafely;
 
 import java.net.URI;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -121,6 +123,7 @@ public final class S3CrtAsyncHttpClient implements SdkAsyncHttpClient {
         HttpChecksum httpChecksum = asyncRequest.httpExecutionAttributes().getAttribute(HTTP_CHECKSUM);
         ResumeToken resumeToken = asyncRequest.httpExecutionAttributes().getAttribute(CRT_PAUSE_RESUME_TOKEN);
         Region signingRegion = asyncRequest.httpExecutionAttributes().getAttribute(SIGNING_REGION);
+        Path path = asyncRequest.httpExecutionAttributes().getAttribute(SOURCE_REQ_PATH);
 
         ChecksumConfig checksumConfig =
             checksumConfig(httpChecksum, requestType, s3NativeClientConfiguration.checksumValidationEnabled());
@@ -131,6 +134,7 @@ public final class S3CrtAsyncHttpClient implements SdkAsyncHttpClient {
             .withMetaRequestType(requestType)
             .withChecksumConfig(checksumConfig)
             .withEndpoint(endpoint)
+            .withRequestFilePath(path)
             .withResponseHandler(responseHandler)
             .withResumeToken(resumeToken);
 
@@ -207,10 +211,7 @@ public final class S3CrtAsyncHttpClient implements SdkAsyncHttpClient {
 
         HttpHeader[] crtHeaderArray = createHttpHeaderList(asyncRequest).toArray(new HttpHeader[0]);
 
-        S3CrtRequestBodyStreamAdapter sdkToCrtRequestPublisher =
-            new S3CrtRequestBodyStreamAdapter(asyncRequest.requestContentPublisher());
-
-        return new HttpRequest(method, encodedPath + encodedQueryString, crtHeaderArray, sdkToCrtRequestPublisher);
+        return new HttpRequest(method, encodedPath + encodedQueryString, crtHeaderArray, null);
     }
 
     @Override
