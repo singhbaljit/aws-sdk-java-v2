@@ -25,7 +25,6 @@ import software.amazon.awssdk.services.query.auth.scheme.QueryAuthSchemeProvider
 import software.amazon.awssdk.services.query.auth.scheme.internal.QueryAuthSchemeInterceptor;
 import software.amazon.awssdk.services.query.endpoints.QueryClientContextParams;
 import software.amazon.awssdk.services.query.endpoints.QueryEndpointProvider;
-import software.amazon.awssdk.services.query.endpoints.internal.QueryEndpointAuthSchemeInterceptor;
 import software.amazon.awssdk.services.query.endpoints.internal.QueryRequestSetEndpointInterceptor;
 import software.amazon.awssdk.services.query.endpoints.internal.QueryResolveEndpointInterceptor;
 import software.amazon.awssdk.utils.CollectionUtils;
@@ -61,7 +60,6 @@ abstract class DefaultQueryBaseClientBuilder<B extends QueryBaseClientBuilder<B,
         List<ExecutionInterceptor> endpointInterceptors = new ArrayList<>();
         endpointInterceptors.add(new QueryAuthSchemeInterceptor());
         endpointInterceptors.add(new QueryResolveEndpointInterceptor());
-        endpointInterceptors.add(new QueryEndpointAuthSchemeInterceptor());
         endpointInterceptors.add(new QueryRequestSetEndpointInterceptor());
         ClasspathInterceptorChainFactory interceptorFactory = new ClasspathInterceptorChainFactory();
         List<ExecutionInterceptor> interceptors = interceptorFactory
