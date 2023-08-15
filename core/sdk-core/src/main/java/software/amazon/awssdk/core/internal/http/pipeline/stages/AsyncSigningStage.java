@@ -64,9 +64,10 @@ public class AsyncSigningStage implements RequestPipeline<SdkHttpFullRequest,
     public CompletableFuture<SdkHttpFullRequest> execute(SdkHttpFullRequest request, RequestExecutionContext context)
             throws Exception {
         if (shouldDoSraSigning(context)) {
-            return sraSignRequest(request,
-                                  context,
-                                  context.executionAttributes().getAttribute(SdkInternalExecutionAttribute.SELECTED_AUTH_SCHEME));
+            CompletableFuture<SdkHttpFullRequest> result = sraSignRequest(request,
+                                                                                                       context,
+                                                                                                       context.executionAttributes().getAttribute(SdkInternalExecutionAttribute.SELECTED_AUTH_SCHEME));
+            return result;
         }
         return signRequest(request, context);
     }

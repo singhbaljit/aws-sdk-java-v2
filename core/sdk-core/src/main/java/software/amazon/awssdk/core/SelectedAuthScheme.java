@@ -23,7 +23,6 @@ import software.amazon.awssdk.http.auth.spi.AuthSchemeOption;
 import software.amazon.awssdk.http.auth.spi.HttpSigner;
 import software.amazon.awssdk.identity.spi.Identity;
 import software.amazon.awssdk.utils.Validate;
-import software.amazon.awssdk.utils.builder.ToCopyableBuilder;
 
 /**
  * A container for the identity resolver, signer and auth option that we selected for use with this service call attempt.
