@@ -264,6 +264,15 @@
         "shape": "AllTypesStructure"
       }
     },
+    "UnionOp":{
+      "name":"UnionOp",
+      "http":{
+        "method":"PUT",
+        "requestUri":"/"
+      },
+      "input":{"shape":"UnionOpModel"},
+      "output":{"shape":"UnionOpModel"}
+    },
     "PutOperationWithChecksum":{
       "name":"PutOperationWithChecksum",
       "http":{
@@ -894,6 +903,15 @@
       "type":"string",
       "enum":["ENABLED"]
     },
+    "UnionOpModel":{
+      "type":"structure",
+      "members": {
+        "CustomAttributeValue": {
+          "shape": "CustomAttributeValue",
+          "documentation": "<p>The attribute container for the ManifestGenerator details. Jobs must be created with either a manifest file or a ManifestGenerator, but not both.</p>"
+        }
+      }
+    },
     "ChecksumStructureWithStreaming":{
       "type":"structure",
       "members":{
@@ -959,6 +977,51 @@
           "locationName":"QueryParamTwo"
         }
       }
+    },
+    "CustomAttributeValue":{
+      "type":"structure",
+      "members":{
+        "StringValue":{
+          "shape":"StringValue",
+          "documentation":"<p>The S3 job configuration details.</p>"
+        },
+        "StringTwo":{
+          "shape":"StringTwo",
+          "documentation":"<p>The S3 job configuration details.</p>"
+        }
+      },
+      "documentation":"<p>Configures the type of the job's ManifestGenerator.</p>",
+      "union":true
+    },
+    "StringValue":{
+      "type":"string"
+    },
+    "StringTwo":{
+      "type":"string"
+    },
+    "JobManifestGenerator":{
+      "type":"structure",
+      "members":{
+        "S3JobManifestGenerator":{
+          "shape":"S3JobManifestGenerator",
+          "documentation":"<p>The S3 job ManifestGenerator's configuration details.</p>"
+        }
+      },
+      "documentation":"<p>Configures the type of the job's ManifestGenerator.</p>",
+      "union":true
+    },
+    "S3JobManifestGenerator":{
+      "type":"structure",
+      "required":[
+        "EnableManifestOutput"
+      ],
+      "members":{
+        "EnableManifestOutput":{
+          "shape":"Boolean",
+          "documentation":"<p>Determines whether or not to write the job's generated manifest to a bucket.</p>"
+        }
+      },
+      "documentation":"<p>The container for the service that will create the S3 manifest.</p>"
     },
     "QueryParameterOperationRequest":{
       "type":"structure",

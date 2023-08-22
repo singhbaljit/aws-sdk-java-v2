@@ -107,7 +107,7 @@ class CrtFileUploadTest {
         UploadFileRequest request = uploadFileRequest();
 
         CrtFileUpload fileUpload =
-            new CrtFileUpload(future, transferProgress, observable, request);
+            new CrtFileUpload(future, transferProgress, observable, request, null);
 
         observable.subscribe(metaRequest);
 
@@ -136,7 +136,7 @@ class CrtFileUploadTest {
         observable.subscribe(metaRequest);
 
         CrtFileUpload fileUpload =
-            new CrtFileUpload(future, transferProgress, observable, request);
+            new CrtFileUpload(future, transferProgress, observable, request, null);
 
         ResumableFileUpload resumableFileUpload = fileUpload.pause();
         ResumableFileUpload resumableFileUpload2 = fileUpload.pause();
@@ -160,7 +160,7 @@ class CrtFileUploadTest {
         observable.subscribe(metaRequest);
 
         CrtFileUpload fileUpload =
-            new CrtFileUpload(future, transferProgress, observable, request);
+            new CrtFileUpload(future, transferProgress, observable, request, null);
 
         assertThatThrownBy(() -> fileUpload.pause()).isSameAs(exception);
     }
@@ -178,7 +178,7 @@ class CrtFileUploadTest {
         UploadFileRequest request = uploadFileRequest();
 
         CrtFileUpload fileUpload =
-            new CrtFileUpload(future, transferProgress, observable, request);
+            new CrtFileUpload(future, transferProgress, observable, request, null);
 
         observable.subscribe(metaRequest);
 
@@ -209,7 +209,7 @@ class CrtFileUploadTest {
         UploadFileRequest request = uploadFileRequest();
 
         CrtFileUpload fileUpload =
-            new CrtFileUpload(future, transferProgress, observable, request);
+            new CrtFileUpload(future, transferProgress, observable, request, null);
 
         observable.subscribe(metaRequest);
 

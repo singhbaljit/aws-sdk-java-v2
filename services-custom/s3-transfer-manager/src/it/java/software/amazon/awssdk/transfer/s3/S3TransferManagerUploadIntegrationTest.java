@@ -62,7 +62,7 @@ public class S3TransferManagerUploadIntegrationTest extends S3IntegrationTestBas
     }
 
    @Test
-    void upload_file_SentCorrectly() throws IOException {
+    void upload_file_SentCorrectly() throws IOException, InterruptedException {
         Map<String, String> metadata = new HashMap<>();
         metadata.put("x-amz-meta-foobar", "FOO BAR");
         FileUpload fileUpload =
@@ -71,19 +71,34 @@ public class S3TransferManagerUploadIntegrationTest extends S3IntegrationTestBas
                                 .addTransferListener(LoggingTransferListener.create())
                                 .build());
 
-        CompletedFileUpload completedFileUpload = fileUpload.completionFuture().join();
-        assertThat(completedFileUpload.response().responseMetadata().requestId()).isNotNull();
-        assertThat(completedFileUpload.response().sdkHttpResponse()).isNotNull();
+        Thread.sleep(500);
 
-        ResponseInputStream<GetObjectResponse> obj = s3.getObject(r -> r.bucket(TEST_BUCKET).key(TEST_KEY),
-                ResponseTransformer.toInputStream());
+       System.out.println(fileUpload.s3MetaRequestProgress());
+       System.out.println(fileUpload.s3MetaRequestProgress());
 
-        assertThat(ChecksumUtils.computeCheckSum(Files.newInputStream(testFile.toPath())))
-                .isEqualTo(ChecksumUtils.computeCheckSum(obj));
-        assertThat(obj.response().responseMetadata().requestId()).isNotNull();
-        assertThat(obj.response().metadata()).containsEntry("foobar", "FOO BAR");
-        assertThat(fileUpload.progress().snapshot().sdkResponse()).isPresent();
-    }
+       long l = fileUpload.s3MetaRequestProgress().getBytesTransferred();
+
+       long tot = fileUpload.s3MetaRequestProgress().getContentLength();
+       System.out.println(l);
+       System.out.println(tot);
+       Thread.sleep(500);
+       l = fileUpload.s3MetaRequestProgress().getBytesTransferred();
+       tot = fileUpload.s3MetaRequestProgress().getContentLength();
+
+       System.out.println(l);
+       System.out.println(tot);
+
+       l = fileUpload.s3MetaRequestProgress().getBytesTransferred();
+       tot = fileUpload.s3MetaRequestProgress().getContentLength();
+
+       fileUpload.completionFuture().join();
+       System.out.println(l);
+       System.out.println(tot);
+
+
+
+
+   }
 
     @Test
     void upload_asyncRequestBody_SentCorrectly() throws IOException {

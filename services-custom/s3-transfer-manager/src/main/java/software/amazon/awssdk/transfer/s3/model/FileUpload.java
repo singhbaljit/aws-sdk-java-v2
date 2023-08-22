@@ -17,6 +17,7 @@ package software.amazon.awssdk.transfer.s3.model;
 
 import java.util.concurrent.CompletableFuture;
 import software.amazon.awssdk.annotations.SdkPublicApi;
+import software.amazon.awssdk.crt.s3.S3MetaRequestProgress;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
@@ -42,6 +43,10 @@ public interface FileUpload extends ObjectTransfer {
      * @return A {@link ResumableFileUpload} that can be used to resume the upload.
      */
     ResumableFileUpload pause();
+
+    default S3MetaRequestProgress s3MetaRequestProgress(){
+        return null;
+    }
     
     @Override
     CompletableFuture<CompletedFileUpload> completionFuture();

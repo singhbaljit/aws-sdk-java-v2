@@ -45,9 +45,15 @@ import software.amazon.awssdk.core.HttpChecksumConstant;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.http.ContentStreamProvider;
+import software.amazon.awssdk.http.nio.netty.ProxyConfiguration;
+import software.amazon.awssdk.protocols.json.AwsJsonProtocol;
+import software.amazon.awssdk.protocols.json.AwsJsonProtocolFactory;
+import software.amazon.awssdk.protocols.json.internal.marshall.JsonMarshaller;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.protocolrestjson.ProtocolRestJsonClient;
 import software.amazon.awssdk.services.protocolrestjson.model.ChecksumAlgorithm;
+import software.amazon.awssdk.services.protocolrestjson.model.CustomAttributeValue;
+import software.amazon.awssdk.services.protocolrestjson.model.UnionOpResponse;
 
 public class SyncHttpChecksumInTrailerTest {
     private static final String CRLF = "\r\n";
@@ -67,6 +73,21 @@ public class SyncHttpChecksumInTrailerTest {
                                        .build();
 
     }
+
+
+    @Test
+    public void suncsd() {
+        stubResponseWithHeaders();
+
+        UnionOpResponse unionOpResponse = client.unionOp(r -> r.customAttributeValue(g -> g.stringValue("dd")));
+
+        System.out.println(" unionOpResponse "+unionOpResponse.customAttributeValue().type());
+        System.out.println(" unionOpResponse "+unionOpResponse);
+        System.out.println(" unionOpResponse "+unionOpResponse.customAttributeValue());
+
+
+    }
+
 
     @Test
     public void sync_streaming_NoSigner_appends_trailer_checksum() {
@@ -161,7 +182,8 @@ public class SyncHttpChecksumInTrailerTest {
                                            .withHeader("x-foo-id", "foo")
                                            .withHeader("x-bar-id", "bar")
                                            .withHeader("x-foobar-id", "foobar")
-                                           .withBody("{}")));
+                                           .withBody("{\"CustomAttributeValue\": {\"StringValue2\": \"one\", "
+                                                     + "\"StringTwo3\": \"two\"}}")));
     }
 
     private void stubForFailureThenSuccess(int statusCode, String errorCode) {

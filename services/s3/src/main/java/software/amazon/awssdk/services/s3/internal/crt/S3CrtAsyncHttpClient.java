@@ -20,6 +20,7 @@ import static software.amazon.awssdk.services.s3.internal.crt.S3InternalSdkHttpE
 import static software.amazon.awssdk.services.s3.internal.crt.S3InternalSdkHttpExecutionAttribute.HTTP_CHECKSUM;
 import static software.amazon.awssdk.services.s3.internal.crt.S3InternalSdkHttpExecutionAttribute.METAREQUEST_PAUSE_OBSERVABLE;
 import static software.amazon.awssdk.services.s3.internal.crt.S3InternalSdkHttpExecutionAttribute.OPERATION_NAME;
+import static software.amazon.awssdk.services.s3.internal.crt.S3InternalSdkHttpExecutionAttribute.S3_META_REQUEST_PROGRESS;
 import static software.amazon.awssdk.services.s3.internal.crt.S3InternalSdkHttpExecutionAttribute.SIGNING_REGION;
 import static software.amazon.awssdk.services.s3.internal.crt.S3InternalSdkHttpExecutionAttribute.SOURCE_REQ_PATH;
 import static software.amazon.awssdk.utils.FunctionalUtils.invokeSafely;
@@ -43,6 +44,7 @@ import software.amazon.awssdk.crt.s3.S3Client;
 import software.amazon.awssdk.crt.s3.S3ClientOptions;
 import software.amazon.awssdk.crt.s3.S3MetaRequest;
 import software.amazon.awssdk.crt.s3.S3MetaRequestOptions;
+import software.amazon.awssdk.crt.s3.S3MetaRequestProgress;
 import software.amazon.awssdk.http.Header;
 import software.amazon.awssdk.http.SdkHttpRequest;
 import software.amazon.awssdk.http.async.AsyncExecuteRequest;
@@ -124,6 +126,9 @@ public final class S3CrtAsyncHttpClient implements SdkAsyncHttpClient {
         ResumeToken resumeToken = asyncRequest.httpExecutionAttributes().getAttribute(CRT_PAUSE_RESUME_TOKEN);
         Region signingRegion = asyncRequest.httpExecutionAttributes().getAttribute(SIGNING_REGION);
         Path path = asyncRequest.httpExecutionAttributes().getAttribute(SOURCE_REQ_PATH);
+        S3MetaRequestProgress s3MetaRequestProgress = asyncRequest.httpExecutionAttributes().getAttribute(S3_META_REQUEST_PROGRESS);
+
+
 
         ChecksumConfig checksumConfig =
             checksumConfig(httpChecksum, requestType, s3NativeClientConfiguration.checksumValidationEnabled());
@@ -150,6 +155,7 @@ public final class S3CrtAsyncHttpClient implements SdkAsyncHttpClient {
             asyncRequest.httpExecutionAttributes().getAttribute(METAREQUEST_PAUSE_OBSERVABLE);
 
         responseHandler.metaRequest(s3MetaRequest);
+        responseHandler.onProgress(s3MetaRequestProgress);
 
         if (observable != null) {
             observable.subscribe(s3MetaRequest);
