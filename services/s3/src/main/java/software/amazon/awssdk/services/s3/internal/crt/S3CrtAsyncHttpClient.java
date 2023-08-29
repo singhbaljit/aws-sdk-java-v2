@@ -20,7 +20,7 @@ import static software.amazon.awssdk.services.s3.internal.crt.S3InternalSdkHttpE
 import static software.amazon.awssdk.services.s3.internal.crt.S3InternalSdkHttpExecutionAttribute.HTTP_CHECKSUM;
 import static software.amazon.awssdk.services.s3.internal.crt.S3InternalSdkHttpExecutionAttribute.METAREQUEST_PAUSE_OBSERVABLE;
 import static software.amazon.awssdk.services.s3.internal.crt.S3InternalSdkHttpExecutionAttribute.OPERATION_NAME;
-import static software.amazon.awssdk.services.s3.internal.crt.S3InternalSdkHttpExecutionAttribute.S3_META_REQUEST_PROGRESS;
+import static software.amazon.awssdk.services.s3.internal.crt.S3InternalSdkHttpExecutionAttribute.PUBLISHER_LISTENER;
 import static software.amazon.awssdk.services.s3.internal.crt.S3InternalSdkHttpExecutionAttribute.SIGNING_REGION;
 import static software.amazon.awssdk.services.s3.internal.crt.S3InternalSdkHttpExecutionAttribute.SOURCE_REQ_PATH;
 import static software.amazon.awssdk.utils.FunctionalUtils.invokeSafely;
@@ -34,6 +34,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import software.amazon.awssdk.annotations.SdkInternalApi;
 import software.amazon.awssdk.annotations.SdkTestInternalApi;
+import software.amazon.awssdk.core.async.listener.PublisherListener;
 import software.amazon.awssdk.core.interceptor.trait.HttpChecksum;
 import software.amazon.awssdk.crt.auth.signing.AwsSigningConfig;
 import software.amazon.awssdk.crt.http.HttpHeader;
@@ -126,8 +127,7 @@ public final class S3CrtAsyncHttpClient implements SdkAsyncHttpClient {
         ResumeToken resumeToken = asyncRequest.httpExecutionAttributes().getAttribute(CRT_PAUSE_RESUME_TOKEN);
         Region signingRegion = asyncRequest.httpExecutionAttributes().getAttribute(SIGNING_REGION);
         Path path = asyncRequest.httpExecutionAttributes().getAttribute(SOURCE_REQ_PATH);
-        S3MetaRequestProgress s3MetaRequestProgress = asyncRequest.httpExecutionAttributes().getAttribute(S3_META_REQUEST_PROGRESS);
-
+        PublisherListener<S3MetaRequestProgress> listener = asyncRequest.httpExecutionAttributes().getAttribute(PUBLISHER_LISTENER);
 
 
         ChecksumConfig checksumConfig =
@@ -143,6 +143,7 @@ public final class S3CrtAsyncHttpClient implements SdkAsyncHttpClient {
             .withResponseHandler(responseHandler)
             .withResumeToken(resumeToken);
 
+
         // Create a new SigningConfig object only if the signing region has changed from the previously configured region.
         if (signingRegion != null && !s3ClientOptions.getRegion().equals(signingRegion.id())) {
             requestOptions.withSigningConfig(
@@ -150,12 +151,13 @@ public final class S3CrtAsyncHttpClient implements SdkAsyncHttpClient {
                                                            s3ClientOptions.getCredentialsProvider()));
         }
 
+        responseHandler.setPublisherListener(listener);
+
         S3MetaRequest s3MetaRequest = crtS3Client.makeMetaRequest(requestOptions);
         S3MetaRequestPauseObservable observable =
             asyncRequest.httpExecutionAttributes().getAttribute(METAREQUEST_PAUSE_OBSERVABLE);
 
         responseHandler.metaRequest(s3MetaRequest);
-        responseHandler.onProgress(s3MetaRequestProgress);
 
         if (observable != null) {
             observable.subscribe(s3MetaRequest);

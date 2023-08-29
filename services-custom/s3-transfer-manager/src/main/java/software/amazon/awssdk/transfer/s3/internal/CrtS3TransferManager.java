@@ -18,7 +18,7 @@ package software.amazon.awssdk.transfer.s3.internal;
 import static software.amazon.awssdk.core.interceptor.SdkInternalExecutionAttribute.SDK_HTTP_EXECUTION_ATTRIBUTES;
 import static software.amazon.awssdk.services.s3.internal.crt.S3InternalSdkHttpExecutionAttribute.CRT_PAUSE_RESUME_TOKEN;
 import static software.amazon.awssdk.services.s3.internal.crt.S3InternalSdkHttpExecutionAttribute.METAREQUEST_PAUSE_OBSERVABLE;
-import static software.amazon.awssdk.services.s3.internal.crt.S3InternalSdkHttpExecutionAttribute.S3_META_REQUEST_PROGRESS;
+import static software.amazon.awssdk.services.s3.internal.crt.S3InternalSdkHttpExecutionAttribute.PUBLISHER_LISTENER;
 import static software.amazon.awssdk.services.s3.internal.crt.S3InternalSdkHttpExecutionAttribute.SOURCE_REQ_PATH;
 import static software.amazon.awssdk.transfer.s3.internal.GenericS3TransferManager.DEFAULT_FILE_UPLOAD_CHUNK_SIZE;
 import static software.amazon.awssdk.transfer.s3.internal.GenericS3TransferManager.assertNotUnsupportedArn;
@@ -68,26 +68,22 @@ class CrtS3TransferManager extends DelegatingS3TransferManager {
         Validate.paramNotNull(uploadFileRequest, "uploadFileRequest");
         S3MetaRequestPauseObservable observable = new S3MetaRequestPauseObservable();
 
-        S3MetaRequestProgress s3MetaRequestProgress = new S3MetaRequestProgress();
 
-        // // joviegas publisher created here
-        AsyncRequestBody requestBody =
-            FileAsyncRequestBody.builder()
-                                .path(uploadFileRequest.source())
-                                .chunkSizeInBytes(DEFAULT_FILE_UPLOAD_CHUNK_SIZE)
-                                .build();
+        TransferProgressUpdater progressUpdater = new TransferProgressUpdater(uploadFileRequest, null);
+
 
         Consumer<SdkHttpExecutionAttributes.Builder> attachObservable =
-            b -> b.put(METAREQUEST_PAUSE_OBSERVABLE, observable).put(SOURCE_REQ_PATH, uploadFileRequest.source())
-                .put(S3_META_REQUEST_PROGRESS, s3MetaRequestProgress);
+            b -> b.put(METAREQUEST_PAUSE_OBSERVABLE, observable)
+                  .put(SOURCE_REQ_PATH, uploadFileRequest.source())
+                  .put(PUBLISHER_LISTENER, progressUpdater.publisher())
+            ;
+
 
         PutObjectRequest putObjectRequest = attachSdkAttribute(uploadFileRequest.putObjectRequest(), attachObservable);
 
         CompletableFuture<CompletedFileUpload> returnFuture = new CompletableFuture<>();
 
-        TransferProgressUpdater progressUpdater = new TransferProgressUpdater(uploadFileRequest, requestBody);
         progressUpdater.transferInitiated();
-        requestBody = progressUpdater.wrapRequestBody(requestBody);
         progressUpdater.registerCompletion(returnFuture);
 
         try {
@@ -108,7 +104,7 @@ class CrtS3TransferManager extends DelegatingS3TransferManager {
         }
 
 
-        return new CrtFileUpload(returnFuture, progressUpdater.progress(), observable, uploadFileRequest, s3MetaRequestProgress);
+        return new CrtFileUpload(returnFuture, progressUpdater.progress(), observable, uploadFileRequest);
     }
 
     private FileUpload uploadFromBeginning(ResumableFileUpload resumableFileUpload, boolean fileModified,

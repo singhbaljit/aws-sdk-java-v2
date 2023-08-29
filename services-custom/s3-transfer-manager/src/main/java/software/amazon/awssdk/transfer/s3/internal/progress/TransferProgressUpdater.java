@@ -23,8 +23,11 @@ import org.reactivestreams.Subscriber;
 import software.amazon.awssdk.annotations.SdkInternalApi;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
+import software.amazon.awssdk.core.async.SdkPublisher;
 import software.amazon.awssdk.core.async.listener.AsyncRequestBodyListener;
 import software.amazon.awssdk.core.async.listener.AsyncResponseTransformerListener;
+import software.amazon.awssdk.core.async.listener.PublisherListener;
+import software.amazon.awssdk.crt.s3.S3MetaRequestProgress;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.transfer.s3.model.CompletedObjectTransfer;
 import software.amazon.awssdk.transfer.s3.model.TransferObjectRequest;
@@ -95,6 +98,36 @@ public class TransferProgressUpdater {
             });
     }
 
+
+    public PublisherListener<S3MetaRequestProgress> publisher() {
+
+        return new PublisherListener<S3MetaRequestProgress>(){
+            @Override
+            public void publisherSubscribe(Subscriber<? super S3MetaRequestProgress> subscriber) {
+                resetBytesTransferred();
+            }
+
+            @Override
+            public void subscriberOnNext(S3MetaRequestProgress byteBuffer) {
+                incrementBytesTransferred(Long.valueOf(byteBuffer.getBytesTransferred()).intValue(),
+                                          byteBuffer.getContentLength());
+            }
+
+            @Override
+            public void subscriberOnError(Throwable t) {
+                transferFailed(t);
+            }
+
+            @Override
+            public void subscriberOnComplete() {
+                endOfStreamFuture.complete(null);
+            }
+
+
+        };
+    }
+
+
     public <ResultT> AsyncResponseTransformer<GetObjectResponse, ResultT> wrapResponseTransformer(
         AsyncResponseTransformer<GetObjectResponse, ResultT> responseTransformer) {
         return AsyncResponseTransformerListener.wrap(
@@ -141,6 +174,13 @@ public class TransferProgressUpdater {
     private void incrementBytesTransferred(int numBytes) {
         TransferProgressSnapshot snapshot = progress.updateAndGet(b -> {
             b.transferredBytes(b.getTransferredBytes() + numBytes);
+        });
+        listenerInvoker.bytesTransferred(context.copy(b -> b.progressSnapshot(snapshot)));
+    }
+
+    private void incrementBytesTransferred(int numBytes, long totalBytes) {
+        TransferProgressSnapshot snapshot = progress.updateAndGet(b -> {
+            b.transferredBytes(b.getTransferredBytes() + numBytes).totalBytes(totalBytes);
         });
         listenerInvoker.bytesTransferred(context.copy(b -> b.progressSnapshot(snapshot)));
     }

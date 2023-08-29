@@ -24,6 +24,7 @@ import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -33,7 +34,6 @@ import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.s3.model.ChecksumAlgorithm;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.testutils.RandomTempFile;
-import software.amazon.awssdk.transfer.s3.model.CompletedFileUpload;
 import software.amazon.awssdk.transfer.s3.model.CompletedUpload;
 import software.amazon.awssdk.transfer.s3.model.FileUpload;
 import software.amazon.awssdk.transfer.s3.model.Upload;
@@ -73,31 +73,36 @@ public class S3TransferManagerUploadIntegrationTest extends S3IntegrationTestBas
 
         Thread.sleep(500);
 
-       System.out.println(fileUpload.s3MetaRequestProgress());
-       System.out.println(fileUpload.s3MetaRequestProgress());
+       AtomicBoolean atomicBoolean = new AtomicBoolean(true);
 
-       long l = fileUpload.s3MetaRequestProgress().getBytesTransferred();
 
-       long tot = fileUpload.s3MetaRequestProgress().getContentLength();
-       System.out.println(l);
-       System.out.println(tot);
-       Thread.sleep(500);
-       l = fileUpload.s3MetaRequestProgress().getBytesTransferred();
-       tot = fileUpload.s3MetaRequestProgress().getContentLength();
 
-       System.out.println(l);
-       System.out.println(tot);
+       Thread t = new Thread(() ->{
 
-       l = fileUpload.s3MetaRequestProgress().getBytesTransferred();
-       tot = fileUpload.s3MetaRequestProgress().getContentLength();
+           while(atomicBoolean.get()){
+               try {
+                   Thread.sleep(100);
+               } catch (InterruptedException e) {
+                   throw new RuntimeException(e);
+               }
+               long transferredBytes = fileUpload.progress().snapshot().transferredBytes();
+
+               System.out.println("transferredBytes " +transferredBytes);
+           }
+
+
+
+
+       });
+       t.start();
+
+       // thread.start();
+
 
        fileUpload.completionFuture().join();
-       System.out.println(l);
-       System.out.println(tot);
 
-
-
-
+       atomicBoolean.set(false);
+       Thread.sleep(200);
    }
 
     @Test

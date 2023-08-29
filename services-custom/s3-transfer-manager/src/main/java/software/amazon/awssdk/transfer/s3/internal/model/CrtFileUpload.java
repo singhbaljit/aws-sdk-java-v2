@@ -21,7 +21,6 @@ import java.util.concurrent.CompletableFuture;
 import software.amazon.awssdk.annotations.SdkInternalApi;
 import software.amazon.awssdk.crt.CrtRuntimeException;
 import software.amazon.awssdk.crt.s3.ResumeToken;
-import software.amazon.awssdk.crt.s3.S3MetaRequestProgress;
 import software.amazon.awssdk.services.s3.internal.crt.S3MetaRequestPauseObservable;
 import software.amazon.awssdk.transfer.s3.model.CompletedFileUpload;
 import software.amazon.awssdk.transfer.s3.model.FileUpload;
@@ -37,25 +36,15 @@ public final class CrtFileUpload implements FileUpload {
     private final Lazy<ResumableFileUpload> resumableFileUpload;
     private final CompletableFuture<CompletedFileUpload> completionFuture;
     private final TransferProgress progress;
-
-    @Override
-    public S3MetaRequestProgress s3MetaRequestProgress() {
-        return this.s3MetaRequestProgress;
-    }
-
-
-    private final S3MetaRequestProgress s3MetaRequestProgress;
     private final UploadFileRequest request;
     private final S3MetaRequestPauseObservable observable;
 
     public CrtFileUpload(CompletableFuture<CompletedFileUpload> completionFuture,
                          TransferProgress progress,
                          S3MetaRequestPauseObservable observable,
-                         UploadFileRequest request,
-                         S3MetaRequestProgress s3MetaRequestProgress) {
+                         UploadFileRequest request) {
         this.completionFuture = Validate.paramNotNull(completionFuture, "completionFuture");
         this.progress = Validate.paramNotNull(progress, "progress");
-        this.s3MetaRequestProgress = s3MetaRequestProgress;
         this.observable = Validate.paramNotNull(observable, "observable");
         this.request = Validate.paramNotNull(request, "request");
         this.resumableFileUpload = new Lazy<>(this::doPause);

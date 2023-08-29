@@ -26,7 +26,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -42,6 +44,9 @@ import software.amazon.awssdk.transfer.s3.model.Download;
 import software.amazon.awssdk.transfer.s3.model.DownloadFileRequest;
 import software.amazon.awssdk.transfer.s3.model.DownloadRequest;
 import software.amazon.awssdk.transfer.s3.model.FileDownload;
+import software.amazon.awssdk.transfer.s3.model.FileUpload;
+import software.amazon.awssdk.transfer.s3.model.ResumableFileUpload;
+import software.amazon.awssdk.transfer.s3.model.UploadFileRequest;
 import software.amazon.awssdk.transfer.s3.progress.LoggingTransferListener;
 import software.amazon.awssdk.utils.Md5Utils;
 
@@ -124,5 +129,67 @@ public class S3TransferManagerDownloadIntegrationTest extends S3IntegrationTestB
         CompletableFuture<Void> drainPublisherFuture = responsePublisher.subscribe(buf::put);
         drainPublisherFuture.join();
         assertThat(Md5Utils.md5AsBase64(buf.array())).isEqualTo(Md5Utils.md5AsBase64(file));
+    }
+
+    @Test
+    void pause_fileChanged_resumeShouldStartFromBeginning() throws Exception {
+        UploadFileRequest request = UploadFileRequest.builder()
+                                                     .putObjectRequest(b -> b.bucket(BUCKET).key(KEY))
+                                                     .source(new RandomTempFile(OBJ_SIZE))
+            .addTransferListener(LoggingTransferListener.create())
+                                                     .build();
+        FileUpload fileUpload = tm.uploadFile(request);
+
+        AtomicBoolean flagBoolean = new AtomicBoolean(true);
+
+
+        Thread t = new Thread(() ->{
+
+            while(flagBoolean.get()){
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                if(fileUpload.progress().snapshot().ratioTransferred().isPresent()){
+                    System.out.println("fileUpload " +fileUpload.progress().snapshot().ratioTransferred());
+
+                }
+            }
+
+
+        });
+        t.start();
+
+        Thread.sleep(100);
+        ResumableFileUpload pause = fileUpload.pause();
+        Thread.sleep(2000);
+        FileUpload fileUpload1 = tm.resumeUploadFile(pause);
+
+        Thread t2 = new Thread(() ->{
+
+            while(flagBoolean.get()){
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                if(fileUpload1.progress().snapshot().ratioTransferred().isPresent()){
+                    System.out.println("fileUpload111 after Pause " +fileUpload1.progress().snapshot().ratioTransferred());
+
+                }
+            }
+
+
+        });
+        t2.start();
+
+        Thread.sleep(100);
+
+
+
+        fileUpload1.completionFuture().join();
+        Thread.sleep(10000);
+        flagBoolean.set(false);
     }
 }
