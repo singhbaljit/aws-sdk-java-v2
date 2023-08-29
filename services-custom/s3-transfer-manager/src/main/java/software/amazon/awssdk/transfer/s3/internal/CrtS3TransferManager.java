@@ -90,7 +90,7 @@ class CrtS3TransferManager extends DelegatingS3TransferManager {
             assertNotUnsupportedArn(putObjectRequest.bucket(), "upload");
 
             CompletableFuture<PutObjectResponse> crtFuture =
-                s3AsyncClient.putObject(putObjectRequest, AsyncRequestBody.fromFile(uploadFileRequest.source()));
+                s3AsyncClient.putObject(putObjectRequest,  uploadFileRequest.source());
 
             // Forward upload cancellation to CRT future
             CompletableFutureUtils.forwardExceptionTo(returnFuture, crtFuture);

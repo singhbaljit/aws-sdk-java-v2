@@ -139,9 +139,12 @@ public final class S3CrtAsyncHttpClient implements SdkAsyncHttpClient {
             .withMetaRequestType(requestType)
             .withChecksumConfig(checksumConfig)
             .withEndpoint(endpoint)
-            .withRequestFilePath(path)
             .withResponseHandler(responseHandler)
             .withResumeToken(resumeToken);
+
+        if(path != null){
+            requestOptions.withRequestFilePath(path);
+        }
 
 
         // Create a new SigningConfig object only if the signing region has changed from the previously configured region.
@@ -151,7 +154,10 @@ public final class S3CrtAsyncHttpClient implements SdkAsyncHttpClient {
                                                            s3ClientOptions.getCredentialsProvider()));
         }
 
-        responseHandler.setPublisherListener(listener);
+        if(listener != null)
+        {
+            responseHandler.setPublisherListener(listener);
+        }
 
         S3MetaRequest s3MetaRequest = crtS3Client.makeMetaRequest(requestOptions);
         S3MetaRequestPauseObservable observable =
@@ -205,6 +211,9 @@ public final class S3CrtAsyncHttpClient implements SdkAsyncHttpClient {
     }
 
     private static HttpRequest toCrtRequest(AsyncExecuteRequest asyncRequest) {
+
+        Path path = asyncRequest.httpExecutionAttributes().getAttribute(SOURCE_REQ_PATH);
+
         SdkHttpRequest sdkRequest = asyncRequest.request();
 
         String method = sdkRequest.method().name();
@@ -219,7 +228,12 @@ public final class S3CrtAsyncHttpClient implements SdkAsyncHttpClient {
 
         HttpHeader[] crtHeaderArray = createHttpHeaderList(asyncRequest).toArray(new HttpHeader[0]);
 
-        return new HttpRequest(method, encodedPath + encodedQueryString, crtHeaderArray, null);
+
+
+        S3CrtRequestBodyStreamAdapter sdkToCrtRequestPublisher = path == null ?
+            new S3CrtRequestBodyStreamAdapter(asyncRequest.requestContentPublisher()) : null;
+
+        return new HttpRequest(method, encodedPath + encodedQueryString, crtHeaderArray, sdkToCrtRequestPublisher);
     }
 
     @Override

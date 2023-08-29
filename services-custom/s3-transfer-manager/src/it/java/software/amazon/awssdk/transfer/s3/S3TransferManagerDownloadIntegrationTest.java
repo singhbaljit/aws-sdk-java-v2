@@ -28,7 +28,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -134,9 +133,9 @@ public class S3TransferManagerDownloadIntegrationTest extends S3IntegrationTestB
     @Test
     void pause_fileChanged_resumeShouldStartFromBeginning() throws Exception {
         UploadFileRequest request = UploadFileRequest.builder()
-                                                     .putObjectRequest(b -> b.bucket(BUCKET).key(KEY))
+                                                     .putObjectRequest(b -> b.bucket(BUCKET).key(KEY+"NEW"))
                                                      .source(new RandomTempFile(OBJ_SIZE))
-            .addTransferListener(LoggingTransferListener.create())
+                                                     .addTransferListener(LoggingTransferListener.create())
                                                      .build();
         FileUpload fileUpload = tm.uploadFile(request);
 
