@@ -37,10 +37,11 @@ import software.amazon.awssdk.utils.builder.ToCopyableBuilder;
 @Immutable
 public final class AttributeMap implements ToCopyableBuilder<AttributeMap.Builder, AttributeMap>, SdkAutoCloseable {
     private static final AttributeMap EMPTY = AttributeMap.builder().build();
-    private final Map<Key<?>, Object> attributes;
+    private final Map<Key<?>, Value<?>> attributes;
 
-    private AttributeMap(Map<? extends Key<?>, ?> attributes) {
-        this.attributes = new HashMap<>(attributes);
+    private AttributeMap(Map<Key<?>, Value<?>> attributes) {
+        this.attributes = new HashMap<>();
+        attributes.forEach((k, v) -> attributes.put(k, v.copyForMap()));
     }
 
     /**
@@ -53,12 +54,15 @@ public final class AttributeMap implements ToCopyableBuilder<AttributeMap.Builde
 
     /**
      * Get the value associated with the provided key from this map. This will return null if the value is not set or if the
-     * value
-     * stored is null. These cases can be disambiguated using {@link #containsKey(Key)}.
+     * value stored is null. These cases can be disambiguated using {@link #containsKey(Key)}.
      */
     public <T> T get(Key<T> key) {
         Validate.notNull(key, "Key to retrieve must not be null.");
-        return key.convertValue(attributes.get(key));
+        Value<?> value = attributes.get(key);
+        if (value == null) {
+            return null;
+        }
+        return key.convertValue(value.get(this::get));
     }
 
     /**
@@ -69,8 +73,9 @@ public final class AttributeMap implements ToCopyableBuilder<AttributeMap.Builde
      * @return New options with values merged.
      */
     public AttributeMap merge(AttributeMap lowerPrecedence) {
-        Map<Key<?>, Object> copiedConfiguration = new HashMap<>(attributes);
-        lowerPrecedence.attributes.forEach(copiedConfiguration::putIfAbsent);
+        Map<Key<?>, Value<?>> copiedConfiguration = new HashMap<>();
+        attributes.forEach((k, v) -> copiedConfiguration.put(k, v.copyForMap()));
+        lowerPrecedence.attributes.forEach((k, v) -> copiedConfiguration.putIfAbsent(k, v.copyForMap()));
         return new AttributeMap(copiedConfiguration);
     }
 
@@ -171,18 +176,22 @@ public final class AttributeMap implements ToCopyableBuilder<AttributeMap.Builde
 
     public static final class Builder implements CopyableBuilder<Builder, AttributeMap> {
 
-        private final Map<Key<?>, Object> configuration = new HashMap<>();
+        private final Map<Key<?>, Value<?>> configuration = new HashMap<>();
 
         private Builder() {
         }
 
         private Builder(AttributeMap attributeMap) {
-            this.configuration.putAll(attributeMap.attributes);
+            attributeMap.attributes.forEach((k, v) -> configuration.put(k, v.copyForBuilder()));
         }
 
         public <T> T get(Key<T> key) {
             Validate.notNull(key, "Key to retrieve must not be null.");
-            return key.convertValue(configuration.get(key));
+            Value<?> value = configuration.get(key);
+            if (value == null) {
+                return null;
+            }
+            return key.convertValue(value.get(this::get));
         }
 
         /**
@@ -190,7 +199,19 @@ public final class AttributeMap implements ToCopyableBuilder<AttributeMap.Builde
          */
         public <T> Builder put(Key<T> key, T value) {
             Validate.notNull(key, "Key to set must not be null.");
-            configuration.put(key, value);
+            configuration.put(key, new ConstantValue<>(value));
+            return this;
+        }
+
+        public <T> Builder putLazy(Key<T> key, LazyValue<T> lazyValue) {
+            Validate.notNull(key, "Key to set must not be null.");
+            configuration.put(key, new DerivedValue<>(key, lazyValue));
+            return this;
+        }
+
+        public <T> Builder putLazyIfAbsent(Key<T> key, LazyValue<T> lazyValue) {
+            Validate.notNull(key, "Key to set must not be null.");
+            configuration.computeIfAbsent(key, k -> new DerivedValue<>(key, lazyValue));
             return this;
         }
 
@@ -201,7 +222,7 @@ public final class AttributeMap implements ToCopyableBuilder<AttributeMap.Builde
         public Builder putAll(Map<? extends Key<?>, ?> attributes) {
             attributes.forEach((key, value) -> {
                 key.validateValue(value);
-                configuration.put(key, value);
+                configuration.put(key, new ConstantValue<>(value));
             });
             return this;
         }
@@ -212,4 +233,94 @@ public final class AttributeMap implements ToCopyableBuilder<AttributeMap.Builde
         }
     }
 
+    @FunctionalInterface
+    public interface LazyValue<T> {
+        T get(LazyValueSource source);
+    }
+
+    @FunctionalInterface
+    public interface LazyValueSource {
+        <T> T get(Key<T> sourceKey);
+    }
+
+    private interface Value<T> {
+        T get(LazyValueSource source);
+        Value<T> copyForBuilder();
+        Value<T> copyForMap();
+    }
+
+    private static class ConstantValue<T> implements Value<T> {
+        private final T value;
+
+        private ConstantValue(T value) {
+            this.value = value;
+        }
+
+        @Override
+        public T get(LazyValueSource source) {
+            return value;
+        }
+
+        @Override
+        public Value<T> copyForBuilder() {
+            return this;
+        }
+
+        @Override
+        public Value<T> copyForMap() {
+            return this;
+        }
+    }
+
+    private static class DerivedValue<T> implements Value<T> {
+        private final Key<T> key;
+        private final LazyValue<T> lazyValue;
+        private boolean onStack = false;
+
+        private DerivedValue(Key<T> key, LazyValue<T> lazyValue) {
+            this.key = Validate.paramNotNull(key, "key");
+            this.lazyValue = Validate.paramNotNull(lazyValue, "key");
+        }
+
+        @Override
+        public T get(LazyValueSource source) {
+            try {
+                if (onStack) {
+                    throw new IllegalStateException("Derived key " + key + " attempted to read itself");
+                }
+                onStack = true;
+                return lazyValue.get(source);
+            } finally {
+                onStack = false;
+            }
+        }
+
+        @Override
+        public Value<T> copyForBuilder() {
+            return new DerivedValue<>(key, lazyValue);
+        }
+
+        @Override
+        public Value<T> copyForMap() {
+            return new CachingDerivedValue<>(key, lazyValue);
+        }
+    }
+
+    private static final class CachingDerivedValue<T> extends DerivedValue<T> {
+        private boolean valueCached = false;
+        private T value;
+
+        private CachingDerivedValue(Key<T> key, LazyValue<T> lazyValue) {
+            super(key, lazyValue);
+        }
+
+        @Override
+        public T get(LazyValueSource source) {
+            if (!valueCached) {
+                value = super.get(source);
+                valueCached = true;
+            }
+            return value;
+        }
+    }
 }
