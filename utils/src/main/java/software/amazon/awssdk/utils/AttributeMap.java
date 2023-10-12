@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import software.amazon.awssdk.annotations.Immutable;
 import software.amazon.awssdk.annotations.SdkProtectedApi;
+import software.amazon.awssdk.annotations.ToBuilderIgnoreField;
 import software.amazon.awssdk.utils.builder.CopyableBuilder;
 import software.amazon.awssdk.utils.builder.ToCopyableBuilder;
 
@@ -41,7 +42,7 @@ public final class AttributeMap implements ToCopyableBuilder<AttributeMap.Builde
 
     private AttributeMap(Map<Key<?>, Value<?>> attributes) {
         this.attributes = new HashMap<>();
-        attributes.forEach((k, v) -> attributes.put(k, v.copyForMap()));
+        attributes.forEach((k, v) -> this.attributes.put(k, v.copyForMap()));
     }
 
     /**
@@ -89,15 +90,7 @@ public final class AttributeMap implements ToCopyableBuilder<AttributeMap.Builde
 
     @Override
     public void close() {
-        attributes.values().forEach(v -> IoUtils.closeIfCloseable(v, null));
-        attributes.values().forEach(this::shutdownIfExecutorService);
-    }
-
-    private void shutdownIfExecutorService(Object object) {
-        if (object instanceof ExecutorService) {
-            ExecutorService executor = (ExecutorService) object;
-            executor.shutdown();
-        }
+        attributes.values().forEach(Value::close);
     }
 
     /**
@@ -166,6 +159,7 @@ public final class AttributeMap implements ToCopyableBuilder<AttributeMap.Builde
     }
 
     @Override
+    @ToBuilderIgnoreField("configuration")
     public Builder toBuilder() {
         return new Builder(this);
     }
@@ -243,9 +237,11 @@ public final class AttributeMap implements ToCopyableBuilder<AttributeMap.Builde
         <T> T get(Key<T> sourceKey);
     }
 
-    private interface Value<T> {
+    private interface Value<T> extends SdkAutoCloseable {
         T get(LazyValueSource source);
+
         Value<T> copyForBuilder();
+
         Value<T> copyForMap();
     }
 
@@ -269,6 +265,12 @@ public final class AttributeMap implements ToCopyableBuilder<AttributeMap.Builde
         @Override
         public Value<T> copyForMap() {
             return this;
+        }
+
+        @Override
+        public void close() {
+            IoUtils.closeIfCloseable(value, null);
+            shutdownIfExecutorService(value);
         }
     }
 
@@ -304,6 +306,10 @@ public final class AttributeMap implements ToCopyableBuilder<AttributeMap.Builde
         public Value<T> copyForMap() {
             return new CachingDerivedValue<>(key, lazyValue);
         }
+
+        @Override
+        public void close() {
+        }
     }
 
     private static final class CachingDerivedValue<T> extends DerivedValue<T> {
@@ -321,6 +327,19 @@ public final class AttributeMap implements ToCopyableBuilder<AttributeMap.Builde
                 valueCached = true;
             }
             return value;
+        }
+
+        @Override
+        public void close() {
+            IoUtils.closeIfCloseable(value, null);
+            shutdownIfExecutorService(value);
+        }
+    }
+
+    private static void shutdownIfExecutorService(Object object) {
+        if (object instanceof ExecutorService) {
+            ExecutorService executor = (ExecutorService) object;
+            executor.shutdown();
         }
     }
 }

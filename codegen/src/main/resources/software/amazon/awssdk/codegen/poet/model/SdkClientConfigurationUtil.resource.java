@@ -25,7 +25,6 @@ public final class SdkClientConfigurationUtil {
      */
     public static SdkClientConfiguration.Builder copyOverridesToConfiguration(ClientOverrideConfiguration overrides,
                                                                               SdkClientConfiguration.Builder builder) {
-
         // misc
         setClientOption(builder, SdkClientOption.ADDITIONAL_HTTP_HEADERS, overrides.headers());
         setClientOption(builder, SdkClientOption.RETRY_POLICY, overrides.retryPolicy());
