@@ -17,6 +17,8 @@ package software.amazon.awssdk.utils;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
+import java.util.StringJoiner;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 import software.amazon.awssdk.annotations.Immutable;
@@ -110,6 +112,11 @@ public final class AttributeMap implements ToCopyableBuilder<AttributeMap.Builde
             this.valueType = unsafeValueType.valueType;
         }
 
+        @Override
+        public String toString() {
+            return "Key(" + valueType.getName() + ")";
+        }
+
         /**
          * Useful for parameterized types.
          */
@@ -150,13 +157,33 @@ public final class AttributeMap implements ToCopyableBuilder<AttributeMap.Builde
     }
 
     @Override
-    public int hashCode() {
-        return attributes.hashCode();
+    public boolean equals(Object obj) {
+        if (!(obj instanceof AttributeMap)) {
+            return false;
+        }
+        AttributeMap rhs = (AttributeMap) obj;
+        if (attributes.size() != rhs.attributes.size()) {
+            return false;
+        }
+
+        for (Key<?> lhsKey : attributes.keySet()) {
+            Object lhsValue = get(lhsKey);
+            Object rhsValue = rhs.get(lhsKey);
+            if (!Objects.equals(lhsValue, rhsValue)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     @Override
-    public boolean equals(Object obj) {
-        return obj instanceof AttributeMap && attributes.equals(((AttributeMap) obj).attributes);
+    public int hashCode() {
+        int hashCode = 1;
+        for (Key<?> key : attributes.keySet()) {
+            hashCode = 31 * hashCode + Objects.hashCode(get(key));
+        }
+        return hashCode;
     }
 
     @Override
@@ -288,6 +315,11 @@ public final class AttributeMap implements ToCopyableBuilder<AttributeMap.Builde
             IoUtils.closeIfCloseable(value, null);
             shutdownIfExecutorService(value);
         }
+
+        @Override
+        public String toString() {
+            return "Value(" + value + ")";
+        }
     }
 
     private static class DerivedValue<T> implements Value<T> {
@@ -326,6 +358,11 @@ public final class AttributeMap implements ToCopyableBuilder<AttributeMap.Builde
         @Override
         public void close() {
         }
+
+        @Override
+        public String toString() {
+            return "Value(<<lazy>>)";
+        }
     }
 
     private static final class CachingDerivedValue<T> extends DerivedValue<T> {
@@ -349,6 +386,14 @@ public final class AttributeMap implements ToCopyableBuilder<AttributeMap.Builde
         public void close() {
             IoUtils.closeIfCloseable(value, null);
             shutdownIfExecutorService(value);
+        }
+
+        @Override
+        public String toString() {
+            if (valueCached) {
+                return "Value(" + value + ")";
+            }
+            return super.toString();
         }
     }
 

@@ -15,6 +15,7 @@
 
 package software.amazon.awssdk.core.client.config;
 
+import java.util.StringJoiner;
 import software.amazon.awssdk.annotations.SdkProtectedApi;
 import software.amazon.awssdk.utils.AttributeMap;
 

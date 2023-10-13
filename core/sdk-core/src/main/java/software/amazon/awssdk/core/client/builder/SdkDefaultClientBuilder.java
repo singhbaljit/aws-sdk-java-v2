@@ -27,12 +27,15 @@ import static software.amazon.awssdk.core.client.config.SdkClientOption.ADDITION
 import static software.amazon.awssdk.core.client.config.SdkClientOption.API_CALL_ATTEMPT_TIMEOUT;
 import static software.amazon.awssdk.core.client.config.SdkClientOption.API_CALL_TIMEOUT;
 import static software.amazon.awssdk.core.client.config.SdkClientOption.ASYNC_HTTP_CLIENT;
-import static software.amazon.awssdk.core.client.config.SdkClientOption.ASYNC_HTTP_CLIENT_BUILDER;
+import static software.amazon.awssdk.core.client.config.SdkClientOption.CONFIGURED_ASYNC_HTTP_CLIENT;
+import static software.amazon.awssdk.core.client.config.SdkClientOption.CONFIGURED_ASYNC_HTTP_CLIENT_BUILDER;
 import static software.amazon.awssdk.core.client.config.SdkClientOption.CLIENT_TYPE;
 import static software.amazon.awssdk.core.client.config.SdkClientOption.CLIENT_USER_AGENT;
 import static software.amazon.awssdk.core.client.config.SdkClientOption.COMPRESSION_CONFIGURATION;
 import static software.amazon.awssdk.core.client.config.SdkClientOption.CONFIGURED_COMPRESSION_CONFIGURATION;
+import static software.amazon.awssdk.core.client.config.SdkClientOption.CONFIGURED_SYNC_HTTP_CLIENT;
 import static software.amazon.awssdk.core.client.config.SdkClientOption.CRC32_FROM_COMPRESSED_DATA_ENABLED;
+import static software.amazon.awssdk.core.client.config.SdkClientOption.DEFAULT_RETRY_MODE;
 import static software.amazon.awssdk.core.client.config.SdkClientOption.ENDPOINT_OVERRIDDEN;
 import static software.amazon.awssdk.core.client.config.SdkClientOption.EXECUTION_ATTRIBUTES;
 import static software.amazon.awssdk.core.client.config.SdkClientOption.EXECUTION_INTERCEPTORS;
@@ -47,7 +50,7 @@ import static software.amazon.awssdk.core.client.config.SdkClientOption.RETRY_PO
 import static software.amazon.awssdk.core.client.config.SdkClientOption.SCHEDULED_EXECUTOR_SERVICE;
 import static software.amazon.awssdk.core.client.config.SdkClientOption.SIGNER_OVERRIDDEN;
 import static software.amazon.awssdk.core.client.config.SdkClientOption.SYNC_HTTP_CLIENT;
-import static software.amazon.awssdk.core.client.config.SdkClientOption.SYNC_HTTP_CLIENT_BUILDER;
+import static software.amazon.awssdk.core.client.config.SdkClientOption.CONFIGURED_SYNC_HTTP_CLIENT_BUILDER;
 import static software.amazon.awssdk.core.internal.SdkInternalTestAdvancedClientOption.ENDPOINT_OVERRIDDEN_OVERRIDE;
 import static software.amazon.awssdk.utils.CollectionUtils.mergeLists;
 import static software.amazon.awssdk.utils.Validate.paramNotNull;
@@ -335,8 +338,8 @@ public abstract class SdkDefaultClientBuilder<B extends SdkClientBuilder<B, C>, 
     private SdkClientConfiguration finalizeConfiguration(SdkClientConfiguration config) {
         return config.toBuilder()
                      .lazyOptionIfAbsent(SCHEDULED_EXECUTOR_SERVICE, c -> resolveScheduledExecutorService())
+                     .lazyOptionIfAbsent(RETRY_POLICY, this::resolveRetryPolicy)
                      .option(EXECUTION_INTERCEPTORS, resolveExecutionInterceptors(config))
-                     .lazyOption(RETRY_POLICY, this::resolveRetryPolicy)
                      .lazyOption(CLIENT_USER_AGENT, this::resolveClientUserAgent)
                      .lazyOption(COMPRESSION_CONFIGURATION, this::resolveCompressionConfiguration)
                      .build();
@@ -402,15 +405,10 @@ public abstract class SdkDefaultClientBuilder<B extends SdkClientBuilder<B, C>, 
     }
 
     private RetryPolicy resolveRetryPolicy(LazyValueSource config) {
-        RetryPolicy policy = config.get(SdkClientOption.RETRY_POLICY);
-        if (policy != null) {
-            return policy;
-        }
-
         RetryMode retryMode = RetryMode.resolver()
-                                       .profileFile(config.get(SdkClientOption.PROFILE_FILE_SUPPLIER))
-                                       .profileName(config.get(SdkClientOption.PROFILE_NAME))
-                                       .defaultRetryMode(config.get(SdkClientOption.DEFAULT_RETRY_MODE))
+                                       .profileFile(config.get(PROFILE_FILE_SUPPLIER))
+                                       .profileName(config.get(PROFILE_NAME))
+                                       .defaultRetryMode(config.get(DEFAULT_RETRY_MODE))
                                        .resolve();
         return RetryPolicy.forRetryMode(retryMode);
     }
@@ -420,12 +418,13 @@ public abstract class SdkDefaultClientBuilder<B extends SdkClientBuilder<B, C>, 
      */
     private SdkHttpClient resolveSyncHttpClient(LazyValueSource config,
                                                 SdkClientConfiguration deprecatedConfigDoNotUseThis) {
-        Validate.isTrue(config.get(SYNC_HTTP_CLIENT) == null || config.get(SYNC_HTTP_CLIENT_BUILDER) == null,
+        Validate.isTrue(config.get(CONFIGURED_SYNC_HTTP_CLIENT) == null ||
+                        config.get(CONFIGURED_SYNC_HTTP_CLIENT_BUILDER) == null,
                         "The httpClient and the httpClientBuilder can't both be configured.");
 
         AttributeMap httpClientConfig = getHttpClientConfig(config, deprecatedConfigDoNotUseThis);
 
-        return Either.fromNullable(config.get(SYNC_HTTP_CLIENT), config.get(SYNC_HTTP_CLIENT_BUILDER))
+        return Either.fromNullable(config.get(CONFIGURED_SYNC_HTTP_CLIENT), config.get(CONFIGURED_SYNC_HTTP_CLIENT_BUILDER))
                      .map(e -> e.map(NonManagedSdkHttpClient::new, b -> b.buildWithDefaults(httpClientConfig)))
                      .orElseGet(() -> defaultHttpClientBuilder.buildWithDefaults(httpClientConfig));
     }
@@ -435,12 +434,13 @@ public abstract class SdkDefaultClientBuilder<B extends SdkClientBuilder<B, C>, 
      */
     private SdkAsyncHttpClient resolveAsyncHttpClient(LazyValueSource config,
                                                       SdkClientConfiguration deprecatedConfigDoNotUseThis) {
-        Validate.isTrue(config.get(ASYNC_HTTP_CLIENT) == null || config.get(ASYNC_HTTP_CLIENT_BUILDER) == null,
+        Validate.isTrue(config.get(CONFIGURED_ASYNC_HTTP_CLIENT) == null ||
+                        config.get(CONFIGURED_ASYNC_HTTP_CLIENT_BUILDER) == null,
                         "The asyncHttpClient and the asyncHttpClientBuilder can't both be configured.");
 
         AttributeMap httpClientConfig = getHttpClientConfig(config, deprecatedConfigDoNotUseThis);
 
-        return Either.fromNullable(config.get(ASYNC_HTTP_CLIENT), config.get(ASYNC_HTTP_CLIENT_BUILDER))
+        return Either.fromNullable(config.get(CONFIGURED_ASYNC_HTTP_CLIENT), config.get(CONFIGURED_ASYNC_HTTP_CLIENT_BUILDER))
                      .map(e -> e.map(NonManagedSdkAsyncHttpClient::new, b -> b.buildWithDefaults(httpClientConfig)))
                      .orElseGet(() -> defaultAsyncHttpClientBuilder.buildWithDefaults(httpClientConfig));
     }
@@ -572,22 +572,22 @@ public abstract class SdkDefaultClientBuilder<B extends SdkClientBuilder<B, C>, 
     }
 
     public final B httpClient(SdkHttpClient httpClient) {
-        clientConfiguration.option(SdkClientOption.SYNC_HTTP_CLIENT, httpClient);
+        clientConfiguration.option(CONFIGURED_SYNC_HTTP_CLIENT, httpClient);
         return thisBuilder();
     }
 
     public final B httpClientBuilder(SdkHttpClient.Builder httpClientBuilder) {
-        clientConfiguration.option(SYNC_HTTP_CLIENT_BUILDER, httpClientBuilder);
+        clientConfiguration.option(CONFIGURED_SYNC_HTTP_CLIENT_BUILDER, httpClientBuilder);
         return thisBuilder();
     }
 
     public final B httpClient(SdkAsyncHttpClient httpClient) {
-        clientConfiguration.option(ASYNC_HTTP_CLIENT, httpClient);
+        clientConfiguration.option(CONFIGURED_ASYNC_HTTP_CLIENT, httpClient);
         return thisBuilder();
     }
 
     public final B httpClientBuilder(SdkAsyncHttpClient.Builder httpClientBuilder) {
-        clientConfiguration.option(SdkClientOption.ASYNC_HTTP_CLIENT_BUILDER, httpClientBuilder);
+        clientConfiguration.option(CONFIGURED_ASYNC_HTTP_CLIENT_BUILDER, httpClientBuilder);
         return thisBuilder();
     }
 

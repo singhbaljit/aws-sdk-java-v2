@@ -99,10 +99,17 @@ public final class SdkClientOption<T> extends ClientOption<T> {
             new SdkClientOption<>(SdkAsyncHttpClient.class);
 
     /**
+     * An asynchronous HTTP client set by the customer. This is likely only useful within configuration classes, and
+     * will be converted into a {@link #ASYNC_HTTP_CLIENT} for the SDK's runtime.
+     */
+    public static final SdkClientOption<SdkAsyncHttpClient> CONFIGURED_ASYNC_HTTP_CLIENT =
+        new SdkClientOption<>(SdkAsyncHttpClient.class);
+
+    /**
      * An asynchronous HTTP client builder set by the customer. This is likely only useful within configuration classes, and
      * will be converted into a {@link #ASYNC_HTTP_CLIENT} for the SDK's runtime.
      */
-    public static final SdkClientOption<SdkAsyncHttpClient.Builder<?>> ASYNC_HTTP_CLIENT_BUILDER =
+    public static final SdkClientOption<SdkAsyncHttpClient.Builder<?>> CONFIGURED_ASYNC_HTTP_CLIENT_BUILDER =
         new SdkClientOption<>(new UnsafeValueType(SdkAsyncHttpClient.Builder.class));
 
     /**
@@ -112,10 +119,17 @@ public final class SdkClientOption<T> extends ClientOption<T> {
             new SdkClientOption<>(SdkHttpClient.class);
 
     /**
+     * An HTTP client set by the customer. This is likely only useful within configuration classes, and
+     * will be converted into a {@link #SYNC_HTTP_CLIENT} for the SDK's runtime.
+     */
+    public static final SdkClientOption<SdkHttpClient> CONFIGURED_SYNC_HTTP_CLIENT =
+        new SdkClientOption<>(SdkHttpClient.class);
+
+    /**
      * An HTTP client builder set by the customer. This is likely only useful within configuration classes, and
      * will be converted into a {@link #SYNC_HTTP_CLIENT} for the SDK's runtime.
      */
-    public static final SdkClientOption<SdkHttpClient.Builder<?>> SYNC_HTTP_CLIENT_BUILDER =
+    public static final SdkClientOption<SdkHttpClient.Builder<?>> CONFIGURED_SYNC_HTTP_CLIENT_BUILDER =
         new SdkClientOption<>(new UnsafeValueType(SdkAsyncHttpClient.Builder.class));
 
     /**
