@@ -18,6 +18,7 @@ package software.amazon.awssdk.utils;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Supplier;
 import software.amazon.awssdk.annotations.Immutable;
 import software.amazon.awssdk.annotations.SdkProtectedApi;
 import software.amazon.awssdk.annotations.ToBuilderIgnoreField;
@@ -74,10 +75,10 @@ public final class AttributeMap implements ToCopyableBuilder<AttributeMap.Builde
      * @return New options with values merged.
      */
     public AttributeMap merge(AttributeMap lowerPrecedence) {
-        Map<Key<?>, Value<?>> copiedConfiguration = new HashMap<>();
-        attributes.forEach((k, v) -> copiedConfiguration.put(k, v.copyForMap()));
-        lowerPrecedence.attributes.forEach((k, v) -> copiedConfiguration.putIfAbsent(k, v.copyForMap()));
-        return new AttributeMap(copiedConfiguration);
+        Builder resultBuilder = builder();
+        attributes.forEach((k, v) -> resultBuilder.internalPut(k, v.copyForMap()));
+        lowerPrecedence.attributes.forEach((k, v) -> resultBuilder.internalPutIfAbsent(k, v::copyForMap));
+        return resultBuilder.build();
     }
 
     public static AttributeMap empty() {
@@ -205,7 +206,22 @@ public final class AttributeMap implements ToCopyableBuilder<AttributeMap.Builde
 
         public <T> Builder putLazyIfAbsent(Key<T> key, LazyValue<T> lazyValue) {
             Validate.notNull(key, "Key to set must not be null.");
-            configuration.computeIfAbsent(key, k -> new DerivedValue<>(key, lazyValue));
+            internalPutIfAbsent(key, () -> new DerivedValue<>(key, lazyValue));
+            return this;
+        }
+
+        private Builder internalPut(Key<?> key, Value<?> value) {
+            configuration.put(key, value);
+            return this;
+        }
+
+        private Builder internalPutIfAbsent(Key<?> key, Supplier<Value<?>> value) {
+            configuration.compute(key, (k, v) -> {
+                if (v == null || v.get(this::get) == null) {
+                    return value.get();
+                }
+                return v;
+            });
             return this;
         }
 
