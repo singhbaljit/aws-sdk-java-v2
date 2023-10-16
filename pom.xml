@@ -1443,4 +1443,10 @@
             </build>
         </profile>
     </profiles>
+    <distributionManagement>
+        <repository>
+            <id>local-repo</id>
+            <url>file://${project.build.directory}/deploy</url>
+        </repository>
+    </distributionManagement>
 </project>
