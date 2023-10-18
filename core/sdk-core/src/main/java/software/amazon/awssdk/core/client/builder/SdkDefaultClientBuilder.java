@@ -27,13 +27,14 @@ import static software.amazon.awssdk.core.client.config.SdkClientOption.ADDITION
 import static software.amazon.awssdk.core.client.config.SdkClientOption.API_CALL_ATTEMPT_TIMEOUT;
 import static software.amazon.awssdk.core.client.config.SdkClientOption.API_CALL_TIMEOUT;
 import static software.amazon.awssdk.core.client.config.SdkClientOption.ASYNC_HTTP_CLIENT;
-import static software.amazon.awssdk.core.client.config.SdkClientOption.CONFIGURED_ASYNC_HTTP_CLIENT;
-import static software.amazon.awssdk.core.client.config.SdkClientOption.CONFIGURED_ASYNC_HTTP_CLIENT_BUILDER;
 import static software.amazon.awssdk.core.client.config.SdkClientOption.CLIENT_TYPE;
 import static software.amazon.awssdk.core.client.config.SdkClientOption.CLIENT_USER_AGENT;
 import static software.amazon.awssdk.core.client.config.SdkClientOption.COMPRESSION_CONFIGURATION;
+import static software.amazon.awssdk.core.client.config.SdkClientOption.CONFIGURED_ASYNC_HTTP_CLIENT;
+import static software.amazon.awssdk.core.client.config.SdkClientOption.CONFIGURED_ASYNC_HTTP_CLIENT_BUILDER;
 import static software.amazon.awssdk.core.client.config.SdkClientOption.CONFIGURED_COMPRESSION_CONFIGURATION;
 import static software.amazon.awssdk.core.client.config.SdkClientOption.CONFIGURED_SYNC_HTTP_CLIENT;
+import static software.amazon.awssdk.core.client.config.SdkClientOption.CONFIGURED_SYNC_HTTP_CLIENT_BUILDER;
 import static software.amazon.awssdk.core.client.config.SdkClientOption.CRC32_FROM_COMPRESSED_DATA_ENABLED;
 import static software.amazon.awssdk.core.client.config.SdkClientOption.DEFAULT_RETRY_MODE;
 import static software.amazon.awssdk.core.client.config.SdkClientOption.ENDPOINT_OVERRIDDEN;
@@ -50,7 +51,6 @@ import static software.amazon.awssdk.core.client.config.SdkClientOption.RETRY_PO
 import static software.amazon.awssdk.core.client.config.SdkClientOption.SCHEDULED_EXECUTOR_SERVICE;
 import static software.amazon.awssdk.core.client.config.SdkClientOption.SIGNER_OVERRIDDEN;
 import static software.amazon.awssdk.core.client.config.SdkClientOption.SYNC_HTTP_CLIENT;
-import static software.amazon.awssdk.core.client.config.SdkClientOption.CONFIGURED_SYNC_HTTP_CLIENT_BUILDER;
 import static software.amazon.awssdk.core.internal.SdkInternalTestAdvancedClientOption.ENDPOINT_OVERRIDDEN_OVERRIDE;
 import static software.amazon.awssdk.utils.CollectionUtils.mergeLists;
 import static software.amazon.awssdk.utils.Validate.paramNotNull;
@@ -97,7 +97,6 @@ import software.amazon.awssdk.http.async.AsyncExecuteRequest;
 import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
 import software.amazon.awssdk.identity.spi.IdentityProviders;
 import software.amazon.awssdk.metrics.MetricPublisher;
-import software.amazon.awssdk.profiles.ProfileFile;
 import software.amazon.awssdk.profiles.ProfileFileSupplier;
 import software.amazon.awssdk.profiles.ProfileFileSystemSetting;
 import software.amazon.awssdk.profiles.ProfileProperty;
@@ -290,7 +289,7 @@ public abstract class SdkDefaultClientBuilder<B extends SdkClientBuilder<B, C>, 
         configuration = configuration.merge(c -> c.option(EXECUTION_INTERCEPTORS, new ArrayList<>())
                                                   .option(ADDITIONAL_HTTP_HEADERS, new LinkedHashMap<>())
                                                   .lazyOption(PROFILE_FILE, conf -> conf.get(PROFILE_FILE_SUPPLIER).get())
-                                                  .option(PROFILE_FILE_SUPPLIER, ProfileFile::defaultProfileFile)
+                                                  .option(PROFILE_FILE_SUPPLIER, ProfileFileSupplier.defaultSupplier())
                                                   .option(PROFILE_NAME,
                                                           ProfileFileSystemSetting.AWS_PROFILE.getStringValueOrThrow())
                                                   .option(USER_AGENT_PREFIX, SdkUserAgent.create().userAgent())
@@ -298,8 +297,7 @@ public abstract class SdkDefaultClientBuilder<B extends SdkClientBuilder<B, C>, 
                                                   .option(CRC32_FROM_COMPRESSED_DATA_ENABLED, false)
                                                   .option(IDENTITY_PROVIDERS, IdentityProviders.builder().build())
                                                   .option(CONFIGURED_COMPRESSION_CONFIGURATION,
-                                                          CompressionConfiguration.builder().build())
-                                                  .option(HTTP_CLIENT_CONFIG, AttributeMap.empty()));
+                                                          CompressionConfiguration.builder().build()));
         return configuration;
     }
 
@@ -326,7 +324,7 @@ public abstract class SdkDefaultClientBuilder<B extends SdkClientBuilder<B, C>, 
      */
     private SdkClientConfiguration finalizeAsyncConfiguration(SdkClientConfiguration config) {
         return config.toBuilder()
-                     .lazyOption(FUTURE_COMPLETION_EXECUTOR, this::resolveAsyncFutureCompletionExecutor)
+                     .lazyOptionIfAbsent(FUTURE_COMPLETION_EXECUTOR, this::resolveAsyncFutureCompletionExecutor)
                      .lazyOption(ASYNC_HTTP_CLIENT, c -> resolveAsyncHttpClient(c, config))
                      .option(SdkClientOption.CLIENT_TYPE, ASYNC)
                      .build();
@@ -478,22 +476,17 @@ public abstract class SdkDefaultClientBuilder<B extends SdkClientBuilder<B, C>, 
      * on the number of processors available.
      */
     private Executor resolveAsyncFutureCompletionExecutor(LazyValueSource config) {
-        Supplier<Executor> defaultExecutor = () -> {
-            int processors = Runtime.getRuntime().availableProcessors();
-            int corePoolSize = Math.max(8, processors);
-            int maxPoolSize = Math.max(64, processors * 2);
-            ThreadPoolExecutor executor = new ThreadPoolExecutor(corePoolSize, maxPoolSize,
-                                                                 10, TimeUnit.SECONDS,
-                                                                 new LinkedBlockingQueue<>(1_000),
-                                                                 new ThreadFactoryBuilder()
-                                                                     .threadNamePrefix("sdk-async-response").build());
-            // Allow idle core threads to time out
-            executor.allowCoreThreadTimeOut(true);
-            return executor;
-        };
-
-        return Optional.ofNullable(config.get(FUTURE_COMPLETION_EXECUTOR))
-                       .orElseGet(defaultExecutor);
+        int processors = Runtime.getRuntime().availableProcessors();
+        int corePoolSize = Math.max(8, processors);
+        int maxPoolSize = Math.max(64, processors * 2);
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(corePoolSize, maxPoolSize,
+                                                             10, TimeUnit.SECONDS,
+                                                             new LinkedBlockingQueue<>(1_000),
+                                                             new ThreadFactoryBuilder()
+                                                                 .threadNamePrefix("sdk-async-response").build());
+        // Allow idle core threads to time out
+        executor.allowCoreThreadTimeOut(true);
+        return executor;
     }
 
     /**

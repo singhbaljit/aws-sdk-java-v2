@@ -29,6 +29,7 @@ import java.net.URI;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import org.assertj.core.api.Assertions;
 import org.junit.Rule;
 import org.junit.Test;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
@@ -44,6 +45,10 @@ import software.amazon.awssdk.utils.StringInputStream;
 public abstract class ClientRetryModeTestSuite<ClientT, BuilderT extends AwsClientBuilder<BuilderT, ClientT>> {
     @Rule
     public WireMockRule wireMock = new WireMockRule(0);
+
+    static {
+        Assertions.setMaxStackTraceElementsDisplayed(100);
+    }
 
     @Test
     public void legacyRetryModeIsFourAttempts() {

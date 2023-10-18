@@ -210,8 +210,8 @@ public abstract class AwsDefaultClientBuilder<BuilderT extends AwsClientBuilder<
             IdentityProvider<? extends AwsCredentialsIdentity> identityProvider =
                 builder.option(AwsClientOption.CREDENTIALS_IDENTITY_PROVIDER);
 
-            // Currently, it is not possible for identityProvider to be null as default provider is used while building the client if
-            // the clientConfig is null. However, we do want to support ability to unset an identity provider later.
+            // Currently, it is not possible for identityProvider to be null as default provider is used while building the client
+            // if the clientConfig is null. However, we do want to support ability to unset an identity provider later.
             // Moreover, putIdentityProvider will throw NPE on null, so adding the null check here. Also, validateClientOptions
             // currently asserts it is not null, which will have to change when we allow unsetting default identity provider.
             if (identityProvider == null) {

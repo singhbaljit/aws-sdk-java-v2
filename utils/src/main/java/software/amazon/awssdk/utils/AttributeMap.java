@@ -18,8 +18,8 @@ package software.amazon.awssdk.utils;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.StringJoiner;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import software.amazon.awssdk.annotations.Immutable;
 import software.amazon.awssdk.annotations.SdkProtectedApi;
@@ -46,6 +46,7 @@ public final class AttributeMap implements ToCopyableBuilder<AttributeMap.Builde
     private AttributeMap(Map<Key<?>, Value<?>> attributes) {
         this.attributes = new HashMap<>();
         attributes.forEach((k, v) -> this.attributes.put(k, v.copyForMap()));
+        this.attributes.forEach((k, v) -> v.get(this::get));
     }
 
     /**
@@ -101,15 +102,17 @@ public final class AttributeMap implements ToCopyableBuilder<AttributeMap.Builde
      * example, a {@code ClientOption<T>} may extend this to define options that can be stored in an {@link AttributeMap}.
      */
     public abstract static class Key<T> {
-
         private final Class<?> valueType;
+        private final Function<Object, T> convertMethod;
 
         protected Key(Class<T> valueType) {
             this.valueType = valueType;
+            this.convertMethod = valueType::cast;
         }
 
         protected Key(UnsafeValueType unsafeValueType) {
             this.valueType = unsafeValueType.valueType;
+            this.convertMethod = v -> (T) v; // 🙏
         }
 
         @Override
@@ -143,11 +146,7 @@ public final class AttributeMap implements ToCopyableBuilder<AttributeMap.Builde
          * Validate the provided value is of the correct type and convert it to the proper type for this option.
          */
         public final T convertValue(Object value) {
-            validateValue(value);
-
-            @SuppressWarnings("unchecked") // Only actually unchecked if UnsafeValueType is used.
-            T result = (T) valueType.cast(value);
-            return result;
+            return convertMethod.apply(value);
         }
     }
 
@@ -334,10 +333,10 @@ public final class AttributeMap implements ToCopyableBuilder<AttributeMap.Builde
 
         @Override
         public T get(LazyValueSource source) {
+            if (onStack) {
+                throw new IllegalStateException("Derived key " + key + " attempted to read itself");
+            }
             try {
-                if (onStack) {
-                    throw new IllegalStateException("Derived key " + key + " attempted to read itself");
-                }
                 onStack = true;
                 return lazyValue.get(source);
             } finally {
