@@ -15,9 +15,15 @@
 
 package software.amazon.awssdk.utils;
 
+import static java.util.Collections.emptySet;
+
+import java.util.ArrayDeque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -41,12 +47,15 @@ import software.amazon.awssdk.utils.builder.ToCopyableBuilder;
 @Immutable
 public final class AttributeMap implements ToCopyableBuilder<AttributeMap.Builder, AttributeMap>, SdkAutoCloseable {
     private static final AttributeMap EMPTY = AttributeMap.builder().build();
-    private final Map<Key<?>, Value<?>> attributes;
 
-    private AttributeMap(Map<Key<?>, Value<?>> attributes) {
-        this.attributes = new HashMap<>();
-        attributes.forEach((k, v) -> this.attributes.put(k, v.copyForMap()));
-        this.attributes.forEach((k, v) -> v.get(this::get));
+    private final Map<Key<?>, Value<?>> attributes;
+    private final DependencyGraph dependencyGraph;
+
+    private AttributeMap(Builder builder) {
+        this.attributes = builder.attributes;
+        this.dependencyGraph = builder.dependencyGraph;
+
+        this.attributes.values().forEach(v -> getAndRecordDependencies(dependencyGraph, v, this::get));
     }
 
     /**
@@ -67,7 +76,7 @@ public final class AttributeMap implements ToCopyableBuilder<AttributeMap.Builde
         if (value == null) {
             return null;
         }
-        return key.convertValue(value.get(this::get));
+        return key.convertValue(getAndRecordDependencies(dependencyGraph, value, this::get));
     }
 
     /**
@@ -79,8 +88,8 @@ public final class AttributeMap implements ToCopyableBuilder<AttributeMap.Builde
      */
     public AttributeMap merge(AttributeMap lowerPrecedence) {
         Builder resultBuilder = builder();
-        attributes.forEach((k, v) -> resultBuilder.internalPut(k, v.copyForMap()));
-        lowerPrecedence.attributes.forEach((k, v) -> resultBuilder.internalPutIfAbsent(k, v::copyForMap));
+        attributes.forEach((k, v) -> resultBuilder.internalPut(k, v.copy()));
+        lowerPrecedence.attributes.forEach((k, v) -> resultBuilder.internalPutIfAbsent(k, v::copy));
         return resultBuilder.build();
     }
 
@@ -128,17 +137,6 @@ public final class AttributeMap implements ToCopyableBuilder<AttributeMap.Builde
 
             public UnsafeValueType(Class<?> valueType) {
                 this.valueType = valueType;
-            }
-        }
-
-        /**
-         * Validate the provided value is of the correct type.
-         */
-        final void validateValue(Object value) {
-            if (value != null) {
-                Validate.isAssignableFrom(valueType, value.getClass(),
-                                          "Invalid option: %s. Required value of type %s, but was %s.",
-                                          this, valueType, value.getClass());
             }
         }
 
@@ -195,24 +193,77 @@ public final class AttributeMap implements ToCopyableBuilder<AttributeMap.Builde
         return new Builder();
     }
 
-    public static final class Builder implements CopyableBuilder<Builder, AttributeMap> {
+    private static final class DependencyGraph {
+        /**
+         * Inverted adjacency list of dependencies between derived keys. Mapping from a key to what depends on that key.
+         */
+        private final Map<Key<?>, Set<Value<?>>> dependents;
 
-        private final Map<Key<?>, Value<?>> configuration = new HashMap<>();
+        private DependencyGraph() {
+            this.dependents = new HashMap<>();
+        }
+
+        private DependencyGraph(Map<Key<?>, Set<Value<?>>> dependents) {
+            this.dependents = new HashMap<>(dependents.size());
+            dependents.forEach((k, v) -> this.dependents.put(k, new HashSet<>(v)));
+        }
+
+        private void addDependency(Value<?> consumer, Key<?> dependency) {
+            dependents.computeIfAbsent(dependency, k -> new HashSet<>()).add(consumer);
+        }
+
+        private Set<Value<?>> dependents(Key<?> key) {
+            return dependents.getOrDefault(key, emptySet());
+        }
+
+        private void invalidateConsumerCaches(Key<?> key) {
+            Set<Value<?>> dependents = dependents(key);
+            if (dependents.isEmpty()) {
+                return;
+            }
+
+            Queue<Value<?>> unloadQueue = new ArrayDeque<>(dependents);
+            dependents.clear();
+            while (!unloadQueue.isEmpty()) {
+                Value<?> toUnload = unloadQueue.poll();
+
+                Set<Value<?>> toUnloadDependents = dependents(toUnload.key());
+                unloadQueue.addAll(toUnloadDependents);
+                toUnloadDependents.clear();
+
+                toUnload.clearCache();
+            }
+        }
+
+        public DependencyGraph copy() {
+            return new DependencyGraph(dependents);
+        }
+    }
+
+    public static final class Builder implements CopyableBuilder<Builder, AttributeMap> {
+        private Map<Key<?>, Value<?>> attributes;
+        private DependencyGraph dependencyGraph;
+        private boolean copyOnUpdate;
 
         private Builder() {
+            this.attributes = new HashMap<>();
+            this.dependencyGraph = new DependencyGraph();
+            this.copyOnUpdate = false;
         }
 
         private Builder(AttributeMap attributeMap) {
-            attributeMap.attributes.forEach((k, v) -> configuration.put(k, v.copyForBuilder()));
+            this.attributes = attributeMap.attributes;
+            this.dependencyGraph = attributeMap.dependencyGraph;
+            this.copyOnUpdate = true;
         }
 
         public <T> T get(Key<T> key) {
             Validate.notNull(key, "Key to retrieve must not be null.");
-            Value<?> value = configuration.get(key);
+            Value<?> value = attributes.get(key);
             if (value == null) {
                 return null;
             }
-            return key.convertValue(value.get(this::get));
+            return key.convertValue(getAndRecordDependencies(dependencyGraph, value, this::get));
         }
 
         /**
@@ -220,13 +271,13 @@ public final class AttributeMap implements ToCopyableBuilder<AttributeMap.Builde
          */
         public <T> Builder put(Key<T> key, T value) {
             Validate.notNull(key, "Key to set must not be null.");
-            configuration.put(key, new ConstantValue<>(value));
+            internalPut(key, new ConstantValue<>(key, value));
             return this;
         }
 
         public <T> Builder putLazy(Key<T> key, LazyValue<T> lazyValue) {
             Validate.notNull(key, "Key to set must not be null.");
-            configuration.put(key, new DerivedValue<>(key, lazyValue));
+            internalPut(key, new DerivedValue<>(key, lazyValue));
             return this;
         }
 
@@ -236,14 +287,29 @@ public final class AttributeMap implements ToCopyableBuilder<AttributeMap.Builde
             return this;
         }
 
-        private Builder internalPut(Key<?> key, Value<?> value) {
-            configuration.put(key, value);
+        /**
+         * Adds all the attributes from the map provided. This is not type safe, and will throw an exception during creation if
+         * a value in the map is not of the correct type for its key.
+         */
+        public Builder putAll(Map<? extends Key<?>, ?> attributes) {
+            attributes.forEach(this::internalUnsafePutConstant);
             return this;
         }
 
+        private <T> void internalUnsafePutConstant(Key<T> key, Object value) {
+            internalPut(key, new ConstantValue<>(key, (T) value));
+        }
+
+        private void internalPut(Key<?> key, Value<?> value) {
+            checkCopyOnUpdate();
+            dependencyGraph.invalidateConsumerCaches(key);
+            attributes.put(key, value);
+        }
+
         private Builder internalPutIfAbsent(Key<?> key, Supplier<Value<?>> value) {
-            configuration.compute(key, (k, v) -> {
-                if (v == null || v.get(this::get) == null) {
+            checkCopyOnUpdate();
+            attributes.compute(key, (k, v) -> {
+                if (v == null || getAndRecordDependencies(dependencyGraph, v, this::get) == null) {
                     return value.get();
                 }
                 return v;
@@ -251,21 +317,20 @@ public final class AttributeMap implements ToCopyableBuilder<AttributeMap.Builde
             return this;
         }
 
-        /**
-         * Adds all the attributes from the map provided. This is not type safe, and will throw an exception during creation if
-         * a value in the map is not of the correct type for its key.
-         */
-        public Builder putAll(Map<? extends Key<?>, ?> attributes) {
-            attributes.forEach((key, value) -> {
-                key.validateValue(value);
-                configuration.put(key, new ConstantValue<>(value));
-            });
-            return this;
+        private void checkCopyOnUpdate() {
+            if (copyOnUpdate) {
+                Map<Key<?>, Value<?>> immutableAttributes = attributes;
+                attributes = new HashMap<>(immutableAttributes.size());
+                immutableAttributes.forEach((k, v) -> attributes.put(k, v.copy()));
+                dependencyGraph = dependencyGraph.copy();
+            }
         }
 
         @Override
         public AttributeMap build() {
-            return new AttributeMap(configuration);
+            AttributeMap result = new AttributeMap(this);
+            copyOnUpdate = true;
+            return result;
         }
     }
 
@@ -280,18 +345,27 @@ public final class AttributeMap implements ToCopyableBuilder<AttributeMap.Builde
     }
 
     private interface Value<T> extends SdkAutoCloseable {
+        Key<T> key();
+
         T get(LazyValueSource source);
 
-        Value<T> copyForBuilder();
+        Value<T> copy();
 
-        Value<T> copyForMap();
+        void clearCache();
     }
 
     private static class ConstantValue<T> implements Value<T> {
+        private final Key<T> key;
         private final T value;
 
-        private ConstantValue(T value) {
+        private ConstantValue(Key<T> key, T value) {
+            this.key = key;
             this.value = value;
+        }
+
+        @Override
+        public Key<T> key() {
+            return key;
         }
 
         @Override
@@ -300,13 +374,12 @@ public final class AttributeMap implements ToCopyableBuilder<AttributeMap.Builde
         }
 
         @Override
-        public Value<T> copyForBuilder() {
+        public Value<T> copy() {
             return this;
         }
 
         @Override
-        public Value<T> copyForMap() {
-            return this;
+        public void clearCache() {
         }
 
         @Override
@@ -321,64 +394,59 @@ public final class AttributeMap implements ToCopyableBuilder<AttributeMap.Builde
         }
     }
 
-    private static class DerivedValue<T> implements Value<T> {
+    private static final class DerivedValue<T> implements Value<T> {
         private final Key<T> key;
         private final LazyValue<T> lazyValue;
-        private boolean onStack = false;
-
-        private DerivedValue(Key<T> key, LazyValue<T> lazyValue) {
-            this.key = Validate.paramNotNull(key, "key");
-            this.lazyValue = Validate.paramNotNull(lazyValue, "key");
-        }
-
-        @Override
-        public T get(LazyValueSource source) {
-            if (onStack) {
-                throw new IllegalStateException("Derived key " + key + " attempted to read itself");
-            }
-            try {
-                onStack = true;
-                return lazyValue.get(source);
-            } finally {
-                onStack = false;
-            }
-        }
-
-        @Override
-        public Value<T> copyForBuilder() {
-            return new DerivedValue<>(key, lazyValue);
-        }
-
-        @Override
-        public Value<T> copyForMap() {
-            return new CachingDerivedValue<>(key, lazyValue);
-        }
-
-        @Override
-        public void close() {
-        }
-
-        @Override
-        public String toString() {
-            return "Value(<<lazy>>)";
-        }
-    }
-
-    private static final class CachingDerivedValue<T> extends DerivedValue<T> {
         private boolean valueCached = false;
         private T value;
 
-        private CachingDerivedValue(Key<T> key, LazyValue<T> lazyValue) {
-            super(key, lazyValue);
+        private boolean onStack = false;
+
+        private DerivedValue(Key<T> key, LazyValue<T> lazyValue) {
+            this.key = key;
+            this.lazyValue = lazyValue;
+        }
+
+        private DerivedValue(Key<T> key, LazyValue<T> lazyValue, boolean valueCached, T value) {
+            this(key, lazyValue);
+            this.valueCached = valueCached;
+            this.value = value;
+        }
+
+        @Override
+        public Key<T> key() {
+            return key;
         }
 
         @Override
         public T get(LazyValueSource source) {
+            primeCache(source);
+            return value;
+        }
+
+        private void primeCache(LazyValueSource source) {
             if (!valueCached) {
-                value = super.get(source);
+                if (onStack) {
+                    throw new IllegalStateException("Derived key " + key + " attempted to read itself");
+                }
+                try {
+                    onStack = true;
+                    value = lazyValue.get(source);
+                } finally {
+                    onStack = false;
+                }
                 valueCached = true;
             }
-            return value;
+        }
+
+        @Override
+        public Value<T> copy() {
+            return new DerivedValue<>(key, lazyValue, valueCached, value);
+        }
+
+        @Override
+        public void clearCache() {
+            valueCached = false;
         }
 
         @Override
@@ -392,8 +460,18 @@ public final class AttributeMap implements ToCopyableBuilder<AttributeMap.Builde
             if (valueCached) {
                 return "Value(" + value + ")";
             }
-            return super.toString();
+            return "Value(<<lazy>>)";
         }
+    }
+
+    public static <T> T getAndRecordDependencies(DependencyGraph dependencyGraph, Value<T> value, LazyValueSource delegateGet) {
+        return value.get(new LazyValueSource() {
+            @Override
+            public <U> U get(Key<U> key) {
+                dependencyGraph.addDependency(value, key);
+                return delegateGet.get(key);
+            }
+        });
     }
 
     private static void shutdownIfExecutorService(Object object) {
