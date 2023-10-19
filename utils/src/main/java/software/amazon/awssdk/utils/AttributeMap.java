@@ -55,6 +55,7 @@ public final class AttributeMap implements ToCopyableBuilder<AttributeMap.Builde
         this.attributes = builder.attributes;
         this.dependencyGraph = builder.dependencyGraph;
 
+        // Resolve all of our attributes ahead-of-time, so that we're properly thread-safe
         this.attributes.values().forEach(v -> getAndRecordDependencies(dependencyGraph, v, this::get));
     }
 
@@ -87,9 +88,10 @@ public final class AttributeMap implements ToCopyableBuilder<AttributeMap.Builde
      * @return New options with values merged.
      */
     public AttributeMap merge(AttributeMap lowerPrecedence) {
-        Builder resultBuilder = builder();
-        attributes.forEach((k, v) -> resultBuilder.internalPut(k, v.copy()));
-        lowerPrecedence.attributes.forEach((k, v) -> resultBuilder.internalPutIfAbsent(k, v::copy));
+        Builder resultBuilder = new AttributeMap.Builder(this);
+        lowerPrecedence.attributes.forEach((k, v) -> {
+            resultBuilder.internalPutIfAbsent(k, v::copy);
+        });
         return resultBuilder.build();
     }
 
@@ -297,12 +299,18 @@ public final class AttributeMap implements ToCopyableBuilder<AttributeMap.Builde
         }
 
         private <T> void internalUnsafePutConstant(Key<T> key, Object value) {
-            internalPut(key, new ConstantValue<>(key, (T) value));
+            try {
+                T tValue = key.convertValue(value);
+                internalPut(key, new ConstantValue<>(key, tValue));
+            } catch (ClassCastException e) {
+                throw new IllegalArgumentException("Cannot write " + value.getClass() + " type to key " + key, e);
+            }
         }
 
         private void internalPut(Key<?> key, Value<?> value) {
             checkCopyOnUpdate();
             dependencyGraph.invalidateConsumerCaches(key);
+            value.clearCache();
             attributes.put(key, value);
         }
 
@@ -310,7 +318,10 @@ public final class AttributeMap implements ToCopyableBuilder<AttributeMap.Builde
             checkCopyOnUpdate();
             attributes.compute(key, (k, v) -> {
                 if (v == null || getAndRecordDependencies(dependencyGraph, v, this::get) == null) {
-                    return value.get();
+                    Value<?> newValue = value.get();
+                    dependencyGraph.invalidateConsumerCaches(key);
+                    newValue.clearCache();
+                    return newValue;
                 }
                 return v;
             });
@@ -323,6 +334,7 @@ public final class AttributeMap implements ToCopyableBuilder<AttributeMap.Builde
                 attributes = new HashMap<>(immutableAttributes.size());
                 immutableAttributes.forEach((k, v) -> attributes.put(k, v.copy()));
                 dependencyGraph = dependencyGraph.copy();
+                copyOnUpdate = false;
             }
         }
 

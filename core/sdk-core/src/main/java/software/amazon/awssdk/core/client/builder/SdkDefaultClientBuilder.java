@@ -69,6 +69,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import software.amazon.awssdk.annotations.SdkPreviewApi;
 import software.amazon.awssdk.annotations.SdkProtectedApi;
@@ -97,10 +98,12 @@ import software.amazon.awssdk.http.async.AsyncExecuteRequest;
 import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
 import software.amazon.awssdk.identity.spi.IdentityProviders;
 import software.amazon.awssdk.metrics.MetricPublisher;
+import software.amazon.awssdk.profiles.ProfileFile;
 import software.amazon.awssdk.profiles.ProfileFileSupplier;
 import software.amazon.awssdk.profiles.ProfileFileSystemSetting;
 import software.amazon.awssdk.profiles.ProfileProperty;
 import software.amazon.awssdk.utils.AttributeMap;
+import software.amazon.awssdk.utils.AttributeMap.LazyValue;
 import software.amazon.awssdk.utils.AttributeMap.LazyValueSource;
 import software.amazon.awssdk.utils.Either;
 import software.amazon.awssdk.utils.OptionalUtils;
@@ -240,6 +243,12 @@ public abstract class SdkDefaultClientBuilder<B extends SdkClientBuilder<B, C>, 
         }
         SdkClientConfiguration.Builder builder = configuration.toBuilder();
 
+        Supplier<ProfileFile> profileFileSupplier =
+            OptionalUtils.firstPresent(clientOverrideConfiguration.defaultProfileFileSupplier(),
+                                       () -> clientOverrideConfiguration.defaultProfileFile()
+                                                                        .map(ProfileFileSupplier::fixedProfileFile))
+                         .orElse(null);
+
         builder.option(SCHEDULED_EXECUTOR_SERVICE,
                        clientOverrideConfiguration.scheduledExecutorService()
                                                   .map(ScheduledExecutorUtils::unmanagedScheduledExecutor)
@@ -254,9 +263,7 @@ public abstract class SdkDefaultClientBuilder<B extends SdkClientBuilder<B, C>, 
         builder.option(API_CALL_ATTEMPT_TIMEOUT, clientOverrideConfiguration.apiCallAttemptTimeout().orElse(null));
         builder.option(DISABLE_HOST_PREFIX_INJECTION,
                        clientOverrideConfiguration.advancedOption(DISABLE_HOST_PREFIX_INJECTION).orElse(null));
-        builder.option(PROFILE_FILE_SUPPLIER, clientOverrideConfiguration.defaultProfileFile()
-                                                                         .map(ProfileFileSupplier::fixedProfileFile)
-                                                                         .orElse(null));
+        builder.option(PROFILE_FILE_SUPPLIER, profileFileSupplier);
         builder.option(PROFILE_NAME, clientOverrideConfiguration.defaultProfileName().orElse(null));
         builder.option(METRIC_PUBLISHERS, clientOverrideConfiguration.metricPublishers());
         builder.option(EXECUTION_ATTRIBUTES, clientOverrideConfiguration.executionAttributes());
@@ -286,10 +293,13 @@ public abstract class SdkDefaultClientBuilder<B extends SdkClientBuilder<B, C>, 
      * Apply global default configuration
      */
     private SdkClientConfiguration mergeGlobalDefaults(SdkClientConfiguration configuration) {
+        LazyValue<Supplier<ProfileFile>> defaultProfileFileSupplier =
+            c -> ProfileFileSupplier.fixedProfileFile(ProfileFile.defaultProfileFile());
+
         configuration = configuration.merge(c -> c.option(EXECUTION_INTERCEPTORS, new ArrayList<>())
                                                   .option(ADDITIONAL_HTTP_HEADERS, new LinkedHashMap<>())
+                                                  .lazyOption(PROFILE_FILE_SUPPLIER, defaultProfileFileSupplier)
                                                   .lazyOption(PROFILE_FILE, conf -> conf.get(PROFILE_FILE_SUPPLIER).get())
-                                                  .option(PROFILE_FILE_SUPPLIER, ProfileFileSupplier.defaultSupplier())
                                                   .option(PROFILE_NAME,
                                                           ProfileFileSystemSetting.AWS_PROFILE.getStringValueOrThrow())
                                                   .option(USER_AGENT_PREFIX, SdkUserAgent.create().userAgent())
@@ -416,14 +426,16 @@ public abstract class SdkDefaultClientBuilder<B extends SdkClientBuilder<B, C>, 
      */
     private SdkHttpClient resolveSyncHttpClient(LazyValueSource config,
                                                 SdkClientConfiguration deprecatedConfigDoNotUseThis) {
-        Validate.isTrue(config.get(CONFIGURED_SYNC_HTTP_CLIENT) == null ||
-                        config.get(CONFIGURED_SYNC_HTTP_CLIENT_BUILDER) == null,
+        SdkHttpClient httpClient = config.get(CONFIGURED_SYNC_HTTP_CLIENT);
+        SdkHttpClient.Builder<?> httpClientBuilder = config.get(CONFIGURED_SYNC_HTTP_CLIENT_BUILDER);
+        Validate.isTrue(httpClient == null ||
+                        httpClientBuilder == null,
                         "The httpClient and the httpClientBuilder can't both be configured.");
 
         AttributeMap httpClientConfig = getHttpClientConfig(config, deprecatedConfigDoNotUseThis);
 
-        return Either.fromNullable(config.get(CONFIGURED_SYNC_HTTP_CLIENT), config.get(CONFIGURED_SYNC_HTTP_CLIENT_BUILDER))
-                     .map(e -> e.map(NonManagedSdkHttpClient::new, b -> b.buildWithDefaults(httpClientConfig)))
+        return Either.fromNullable(httpClient, httpClientBuilder)
+                     .map(e -> e.map(Function.identity(), b -> b.buildWithDefaults(httpClientConfig)))
                      .orElseGet(() -> defaultHttpClientBuilder.buildWithDefaults(httpClientConfig));
     }
 
@@ -439,7 +451,7 @@ public abstract class SdkDefaultClientBuilder<B extends SdkClientBuilder<B, C>, 
         AttributeMap httpClientConfig = getHttpClientConfig(config, deprecatedConfigDoNotUseThis);
 
         return Either.fromNullable(config.get(CONFIGURED_ASYNC_HTTP_CLIENT), config.get(CONFIGURED_ASYNC_HTTP_CLIENT_BUILDER))
-                     .map(e -> e.map(NonManagedSdkAsyncHttpClient::new, b -> b.buildWithDefaults(httpClientConfig)))
+                     .map(e -> e.map(Function.identity(), b -> b.buildWithDefaults(httpClientConfig)))
                      .orElseGet(() -> defaultAsyncHttpClientBuilder.buildWithDefaults(httpClientConfig));
     }
 
@@ -565,6 +577,9 @@ public abstract class SdkDefaultClientBuilder<B extends SdkClientBuilder<B, C>, 
     }
 
     public final B httpClient(SdkHttpClient httpClient) {
+        if (httpClient != null) {
+            httpClient = new NonManagedSdkHttpClient(httpClient);
+        }
         clientConfiguration.option(CONFIGURED_SYNC_HTTP_CLIENT, httpClient);
         return thisBuilder();
     }
@@ -575,6 +590,9 @@ public abstract class SdkDefaultClientBuilder<B extends SdkClientBuilder<B, C>, 
     }
 
     public final B httpClient(SdkAsyncHttpClient httpClient) {
+        if (httpClient != null) {
+            httpClient = new NonManagedSdkAsyncHttpClient(httpClient);
+        }
         clientConfiguration.option(CONFIGURED_ASYNC_HTTP_CLIENT, httpClient);
         return thisBuilder();
     }

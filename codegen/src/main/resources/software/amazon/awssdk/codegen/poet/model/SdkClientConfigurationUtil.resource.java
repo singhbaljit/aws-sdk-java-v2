@@ -3,7 +3,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;    
+import java.util.Set;
+import java.util.function.Supplier;
 import software.amazon.awssdk.annotations.SdkInternalApi;
 import software.amazon.awssdk.core.client.config.ClientOption;
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
@@ -14,6 +15,8 @@ import software.amazon.awssdk.core.internal.SdkInternalTestAdvancedClientOption;
 import software.amazon.awssdk.core.signer.Signer;
 import software.amazon.awssdk.profiles.ProfileFile;
 import software.amazon.awssdk.profiles.ProfileFileSupplier;
+import software.amazon.awssdk.utils.OptionalUtils;
+import software.amazon.awssdk.utils.ScheduledExecutorUtils;
 
 @SdkInternalApi
 public final class SdkClientConfigurationUtil {
@@ -30,7 +33,9 @@ public final class SdkClientConfigurationUtil {
         setClientOption(builder, SdkClientOption.RETRY_POLICY, overrides.retryPolicy());
         setClientOption(builder, SdkClientOption.API_CALL_TIMEOUT, overrides.apiCallTimeout());
         setClientOption(builder, SdkClientOption.API_CALL_ATTEMPT_TIMEOUT, overrides.apiCallAttemptTimeout());
-        setClientOption(builder, SdkClientOption.SCHEDULED_EXECUTOR_SERVICE, overrides.scheduledExecutorService());
+        setClientOption(builder, SdkClientOption.SCHEDULED_EXECUTOR_SERVICE,
+                        overrides.scheduledExecutorService()
+                                 .map(ScheduledExecutorUtils::unmanagedScheduledExecutor));
         setClientListOption(builder, SdkClientOption.EXECUTION_INTERCEPTORS, overrides.executionInterceptors());
         setClientOption(builder, SdkClientOption.EXECUTION_ATTRIBUTES, overrides.executionAttributes());
 
@@ -51,10 +56,12 @@ public final class SdkClientConfigurationUtil {
         });
 
         // profile
-        ProfileFile profileFile = overrides.defaultProfileFile().orElse(null);
-        if (profileFile != null) {
-            builder.option(SdkClientOption.PROFILE_FILE_SUPPLIER, ProfileFileSupplier.fixedProfileFile(profileFile));
-        }
+        Supplier<ProfileFile> profileFileSupplier =
+            OptionalUtils.firstPresent(overrides.defaultProfileFileSupplier(),
+                                       () -> overrides.defaultProfileFile().map(ProfileFileSupplier::fixedProfileFile))
+                         .orElse(null);
+
+        setClientOption(builder, SdkClientOption.PROFILE_FILE_SUPPLIER, profileFileSupplier);
         setClientOption(builder, SdkClientOption.PROFILE_NAME, overrides.defaultProfileName());
 
         // misc
