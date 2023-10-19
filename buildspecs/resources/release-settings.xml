@@ -2,8 +2,8 @@
     <servers>
         <server>
             <id>sonatype-nexus-staging</id>
-            <username>amazonwebservices</username>
-            <password>$SONATYPE_PASSWORD</password>
+            <username>amazonweb123456</username>
+            <password>abcdef</password>
         </server>
     </servers>
     <profiles>
