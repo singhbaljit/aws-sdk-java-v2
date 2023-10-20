@@ -90,7 +90,11 @@ public final class AttributeMap implements ToCopyableBuilder<AttributeMap.Builde
     public AttributeMap merge(AttributeMap lowerPrecedence) {
         Builder resultBuilder = new AttributeMap.Builder(this);
         lowerPrecedence.attributes.forEach((k, v) -> {
-            resultBuilder.internalPutIfAbsent(k, v::copy);
+            resultBuilder.internalPutIfAbsent(k, () -> {
+                Value<?> result = v.copy();
+                result.clearCache();
+                return result;
+            });
         });
         return resultBuilder.build();
     }
@@ -205,9 +209,14 @@ public final class AttributeMap implements ToCopyableBuilder<AttributeMap.Builde
             this.dependents = new HashMap<>();
         }
 
-        private DependencyGraph(Map<Key<?>, Set<Value<?>>> dependents) {
+        private DependencyGraph(Map<Key<?>, Set<Value<?>>> dependents,
+                                Function<Value<?>, Value<?>> valueRemapping) {
             this.dependents = new HashMap<>(dependents.size());
-            dependents.forEach((k, v) -> this.dependents.put(k, new HashSet<>(v)));
+            dependents.forEach((key, values) -> {
+                Set<Value<?>> newValues = new HashSet<>(values.size());
+                this.dependents.put(key, newValues);
+                values.forEach(v -> newValues.add(valueRemapping.apply(v)));
+            });
         }
 
         private void addDependency(Value<?> consumer, Key<?> dependency) {
@@ -237,8 +246,8 @@ public final class AttributeMap implements ToCopyableBuilder<AttributeMap.Builde
             }
         }
 
-        public DependencyGraph copy() {
-            return new DependencyGraph(dependents);
+        public DependencyGraph copy(Function<Value<?>, Value<?>> valueRemapping) {
+            return new DependencyGraph(dependents, valueRemapping);
         }
     }
 
@@ -310,7 +319,6 @@ public final class AttributeMap implements ToCopyableBuilder<AttributeMap.Builde
         private void internalPut(Key<?> key, Value<?> value) {
             checkCopyOnUpdate();
             dependencyGraph.invalidateConsumerCaches(key);
-            value.clearCache();
             attributes.put(key, value);
         }
 
@@ -320,7 +328,6 @@ public final class AttributeMap implements ToCopyableBuilder<AttributeMap.Builde
                 if (v == null || getAndRecordDependencies(dependencyGraph, v, this::get) == null) {
                     Value<?> newValue = value.get();
                     dependencyGraph.invalidateConsumerCaches(key);
-                    newValue.clearCache();
                     return newValue;
                 }
                 return v;
@@ -330,10 +337,15 @@ public final class AttributeMap implements ToCopyableBuilder<AttributeMap.Builde
 
         private void checkCopyOnUpdate() {
             if (copyOnUpdate) {
-                Map<Key<?>, Value<?>> immutableAttributes = attributes;
-                attributes = new HashMap<>(immutableAttributes.size());
-                immutableAttributes.forEach((k, v) -> attributes.put(k, v.copy()));
-                dependencyGraph = dependencyGraph.copy();
+                Map<Key<?>, Value<?>> attributesToCopy = attributes;
+                attributes = new HashMap<>(attributesToCopy.size());
+                Map<Value<?>, Value<?>> valueRemapping = new HashMap<>(attributesToCopy.size());
+                attributesToCopy.forEach((k, v) -> {
+                    Value<?> newValue = v.copy();
+                    valueRemapping.put(v, newValue);
+                    attributes.put(k, newValue);
+                });
+                dependencyGraph = dependencyGraph.copy(valueRemapping::get);
                 copyOnUpdate = false;
             }
         }
