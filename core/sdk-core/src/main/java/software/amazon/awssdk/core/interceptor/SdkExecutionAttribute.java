@@ -114,13 +114,22 @@ public class SdkExecutionAttribute {
 
     public static final ExecutionAttribute<String> PROFILE_NAME = new ExecutionAttribute<>("ProfileName");
 
+
+    /**
+     * The backing attribute for RESOLVED_CHECKSUM_SPECS.
+     * This holds the real ChecksumSpecs value, and is used to map to the ChecksumAlgorithm signer property
+     * in the SELECTED_AUTH_SCHEME execution attribute.
+     */
+    private static final ExecutionAttribute<ChecksumSpecs> INTERNAL_RESOLVED_CHECKSUM_SPECS =
+        new ExecutionAttribute<>("InternalResolvedChecksumSpecs");
+
     /**
      * The checksum algorithm is resolved based on the Request member.
      * The RESOLVED_CHECKSUM_SPECS holds the final checksum which will be used for checksum computation.
      */
     public static final ExecutionAttribute<ChecksumSpecs> RESOLVED_CHECKSUM_SPECS =
         ExecutionAttribute.mappedBuilder("ResolvedChecksumSpecs",
-                                         ChecksumSpecs.class,
+                                         () -> INTERNAL_RESOLVED_CHECKSUM_SPECS,
                                          () -> SdkInternalExecutionAttribute.SELECTED_AUTH_SCHEME)
                           .readMapping(SdkExecutionAttribute::signerChecksumReadMapping)
                           .writeMapping(SdkExecutionAttribute::signerChecksumWriteMapping)
@@ -145,41 +154,20 @@ public class SdkExecutionAttribute {
         Algorithm.CRC32C, CRC32C
     );
 
-    private static final ImmutableMap<ChecksumAlgorithm, Algorithm> ALGORITHM_MAP = ImmutableMap.of(
-        SHA256, Algorithm.SHA256,
-        SHA1, Algorithm.SHA1,
-        CRC32, Algorithm.CRC32,
-        CRC32C, Algorithm.CRC32C
-    );
-
     protected SdkExecutionAttribute() {
     }
 
+    /**
+     * Return the checksum specs without doing any extra mapping, since the attribute is backed by another attribute.
+     */
     private static <T extends Identity> ChecksumSpecs signerChecksumReadMapping(ChecksumSpecs checksumSpecs,
                                                                                 SelectedAuthScheme<T> authScheme) {
-        if (authScheme == null) {
-            return null;
-        }
-
-        ChecksumAlgorithm checksumAlgorithm =
-            authScheme.authSchemeOption().signerProperty(AwsV4FamilyHttpSigner.CHECKSUM_ALGORITHM);
-
-        if (checksumAlgorithm == null) {
-            return null;
-        }
-
-
-        return ChecksumSpecs.builder()
-                            .algorithm(ALGORITHM_MAP.getOrDefault(checksumAlgorithm, null))
-                            .isRequestStreaming(checksumSpecs != null && checksumSpecs.isRequestStreaming())
-                            .isRequestChecksumRequired(checksumSpecs != null && checksumSpecs.isRequestChecksumRequired())
-                            .isValidationEnabled(checksumSpecs != null && checksumSpecs.isValidationEnabled())
-                            .headerName(checksumSpecs != null ? checksumSpecs.headerName() : null)
-                            .responseValidationAlgorithms(checksumSpecs != null ? checksumSpecs.responseValidationAlgorithms()
-                                                                                : null)
-                            .build();
+        return checksumSpecs;
     }
 
+    /**
+     * Map from ChecksumSpecs to a SelectedAuthScheme with the CHECKSUM_ALGORITHM signer property set.
+     */
     private static <T extends Identity> SelectedAuthScheme<?> signerChecksumWriteMapping(SelectedAuthScheme<T> authScheme,
                                                                                          ChecksumSpecs checksumSpecs) {
         ChecksumAlgorithm checksumAlgorithm =
